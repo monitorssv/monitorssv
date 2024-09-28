@@ -1,0 +1,12 @@
+network: mainnet
+eth1rpc:
+eth2rpc:
+store:
+  user: root
+  pass: 123456789
+  host: localhost
+  db: monitor_ssv
+  logmode: silent
+etherscan:
+  endpoint: "https://api.etherscan.io"
+  apikey: ""

@@ -1,0 +1,32 @@
+version: "3"
+
+services:
+  monitorssv-web:
+    image: monitorssv/monitorssv-web:v0.1
+    container_name: monitorssv-web
+    network_mode: host
+    restart: always
+    depends_on:
+      - monitorssv-api
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl/localhost.crt:/etc/nginx/ssl/ca.crt
+      - ./nginx/ssl/localhost.key:/etc/nginx/ssl/ca.key
+
+  monitorssv-api:
+    image: monitorssv/monitorssv-api:v0.1
+    container_name: monitorssv-api
+    network_mode: host
+    restart: always
+    environment:
+      - ENCRYPTION_KEY=testkey
+    ports:
+      - "8890:8890"
+    volumes:
+      - ./monitorssv/config.yaml:/app/config.yaml
+    command:
+      - run
+      - -conf-path=/app/config.yaml

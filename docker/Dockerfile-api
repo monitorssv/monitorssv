@@ -1,0 +1,13 @@
+FROM golang:1.22 AS builder
+ENV GO111MODULE=on
+ENV GOPATH=/go
+ENV GOPROXY=https://goproxy.cn
+RUN echo $GOPATH
+WORKDIR /app
+ADD . .
+RUN go build -o /go/bin/monitorssv cmd/monitorssv/main.go
+
+FROM golang:1.22 AS runner
+COPY --from=builder /go/bin/monitorssv .
+
+ENTRYPOINT ["./monitorssv"]

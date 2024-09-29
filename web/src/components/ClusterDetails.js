@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { StatusLabel, ValidatorStatusLabel, OperatorDisplay } from './SharedComponents';
+import { ExternalLink } from 'lucide-react';
 
 const ClusterDetails = ({ isDarkMode, network }) => {
     const { id } = useParams();
@@ -276,13 +277,13 @@ const ClusterDetails = ({ isDarkMode, network }) => {
         });
     };
 
-    const CopyableText = ({ id, fullText, displayText, onClick }) => {
+    const CopyableText = ({ id, fullText, displayText, onClick, beaconchainLink }) => {
         const isCopied = copiedStates[id];
 
         return (
-            <div className="relative inline-block">
+            <div className="relative inline-block flex items-center">
                 <span
-                    className="cursor-pointer hover:underline"
+                    className="cursor-pointer hover:underline mr-2"
                     onClick={() => onClick(id, fullText)}
                     title={`Click to copy full ${id}`}
                 >
@@ -292,6 +293,17 @@ const ClusterDetails = ({ isDarkMode, network }) => {
                     <div className="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 bg-green-500 text-white text-xs px-2 py-1 rounded-md shadow-md">
                         Copied
                     </div>
+                )}
+                {beaconchainLink && (
+                    <a
+                        href={beaconchainLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`ml-2 ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}
+                        title="View on Beaconcha.in"
+                    >
+                        <ExternalLink size={16} />
+                    </a>
                 )}
             </div>
         );
@@ -329,16 +341,17 @@ const ClusterDetails = ({ isDarkMode, network }) => {
             <div className="mb-1">
                 <span className="font-semibold mr-2">On Chain Balance:</span>
                 {clusterData.onChainBalance}
-                <span className="ml-1 text-sm text-gray-400">SSV</span>
+                <span className="ml-1 text-sm text-gray-400">ssv</span>
             </div>
             <div className="mb-1">
                 <span className="font-semibold mr-2">Burn Fee:</span>
                 {clusterData.burnFee}
-                <span className="ml-1 text-sm text-gray-400">SSV</span>
+                <span className="ml-1 text-sm text-gray-400">ssv</span>
             </div>
             <div className="mb-1">
                 <span className="font-semibold mr-2">Operational Runaway:</span>
-                {calculateDays(clusterData.operationalRunaway)} days
+                {calculateDays(clusterData.operationalRunaway)}
+                <span className="ml-1 text-sm text-gray-400">days</span>
             </div>
             <div className="mb-1">
                 <span className="font-semibold mr-2">Owner:</span>
@@ -527,6 +540,7 @@ const ClusterDetails = ({ isDarkMode, network }) => {
                                             fullText={`0x${validator.publicKey}`}
                                             displayText={`0x${validator.publicKey}`}
                                             onClick={copyToClipboard}
+                                            beaconchainLink={getBeaconscanUrl('validator', `0x${validator.publicKey}`)}
                                         />
                                     </td>
                                     <td className="p-3"><ValidatorStatusLabel status={validator.status} /></td>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ValidatorStatusLabel, OperatorDisplay } from './SharedComponents';
+import { ExternalLink } from 'lucide-react';
 
 const Validators = ({ isDarkMode, network }) => {
     const [validators, setValidators] = useState([]);
@@ -34,7 +35,7 @@ const Validators = ({ isDarkMode, network }) => {
             setTotalPages(data.totalPages);
             setTotalItems(data.totalItems);
         } catch (err) {
-            setError('Failed to fetch operators. Please try again later.');
+            setError('Failed to fetch validators. Please try again later.');
         }
     };
 
@@ -71,13 +72,20 @@ const Validators = ({ isDarkMode, network }) => {
         });
     };
 
-    const CopyableText = ({ id, fullText, displayText, onClick }) => {
+    const getBeaconscanUrl = (type, value) => {
+        const baseUrl = network === 'mainnet'
+            ? 'https://beaconcha.in'
+            : 'https://holesky.beaconcha.in';
+        return `${baseUrl}/${type}/${value}`;
+    };
+
+    const CopyableText = ({ id, fullText, displayText, onClick, beaconchainLink }) => {
         const isCopied = copiedStates[id];
 
         return (
-            <div className="relative inline-block">
+            <div className="relative inline-block flex items-center">
                 <span
-                    className="cursor-pointer hover:underline"
+                    className="cursor-pointer hover:underline mr-2"
                     onClick={() => onClick(id, fullText)}
                     title={`Click to copy full ${id}`}
                 >
@@ -87,6 +95,17 @@ const Validators = ({ isDarkMode, network }) => {
                     <div className="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 bg-green-500 text-white text-xs px-2 py-1 rounded-md shadow-md">
                         Copied
                     </div>
+                )}
+                {beaconchainLink && (
+                    <a
+                        href={beaconchainLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`ml-2 ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}
+                        title="View on Beaconcha.in"
+                    >
+                        <ExternalLink size={16} />
+                    </a>
                 )}
             </div>
         );
@@ -143,6 +162,7 @@ const Validators = ({ isDarkMode, network }) => {
                                         fullText={`0x${validator.publicKey}`}
                                         displayText={`0x${truncateAddr(validator.publicKey)}`}
                                         onClick={copyToClipboard}
+                                        beaconchainLink={getBeaconscanUrl('validator', `0x${validator.publicKey}`)}
                                     />
                                 </td>
 

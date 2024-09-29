@@ -115,14 +115,14 @@ const Dashboard = ({ isDarkMode, network }) => {
                     <h2 className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Minimum Collateral</h2>
                     <p className="text-2xl font-bold">
                         {data.minimumCollateral}
-                        <span className="text-sm font-normal ml-1">SSV</span>
+                        <span className="text-sm font-normal ml-1">ssv</span>
                     </p>
                 </div>
                 <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'} p-4 rounded`}>
                     <h2 className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Network Fee</h2>
                     <p className="text-2xl font-bold">
                         {data.networkFee}
-                        <span className="text-sm font-normal ml-1">SSV</span>
+                        <span className="text-sm font-normal ml-1">ssv</span>
                     </p>
                 </div>
             </div>

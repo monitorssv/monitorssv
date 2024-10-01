@@ -623,9 +623,9 @@ func (s *SSV) processBlockEvents(logs []ethtypes.Log) error {
 						return err
 					}
 				}
-
-				s.calcLiquidation(clusterId, owner, operatorIds, cluster)
 			}
+
+			s.calcLiquidation(clusterId, owner, operatorIds, cluster)
 
 			if err = s.recordEvent(vLog, owner.String(), event.Name, clusterId); err != nil {
 				return err

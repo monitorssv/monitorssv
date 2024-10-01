@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { StatusLabel, ValidatorStatusLabel, OperatorDisplay } from './SharedComponents';
-import { ExternalLink } from 'lucide-react';
+import { StatusLabel, ValidatorStatusLabel, OperatorDisplay, PublicKeyDisplay } from './SharedComponents';
 
 const ClusterDetails = ({ isDarkMode, network }) => {
     const { id } = useParams();
@@ -30,7 +29,6 @@ const ClusterDetails = ({ isDarkMode, network }) => {
     const [eventsTotalPages, setEventsTotalPages] = useState(1);
 
     const [error, setError] = useState(null);
-    const [copiedStates, setCopiedStates] = useState({});
 
     useEffect(() => {
         fetchClusterDetails();
@@ -62,6 +60,9 @@ const ClusterDetails = ({ isDarkMode, network }) => {
     };
 
     const fetchClusterPosData = async () => {
+        if (network !== 'mainnet') {
+            return;
+        }
         setError(null);
         try {
             const response = await fetch(`/api/posData?clusterId=${id}`);
@@ -266,49 +267,6 @@ const ClusterDetails = ({ isDarkMode, network }) => {
         }
     };
 
-    const copyToClipboard = (id, text) => {
-        navigator.clipboard.writeText(text).then(() => {
-            setCopiedStates(prev => ({ ...prev, [id]: true }));
-            setTimeout(() => {
-                setCopiedStates(prev => ({ ...prev, [id]: false }));
-            }, 1000);
-        }).catch(err => {
-            console.error('Failed to copy: ', err);
-        });
-    };
-
-    const CopyableText = ({ id, fullText, displayText, onClick, beaconchainLink }) => {
-        const isCopied = copiedStates[id];
-
-        return (
-            <div className="relative inline-block flex items-center">
-                <span
-                    className="cursor-pointer hover:underline mr-2"
-                    onClick={() => onClick(id, fullText)}
-                    title={`Click to copy full ${id}`}
-                >
-                    {displayText}
-                </span>
-                {isCopied && (
-                    <div className="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 bg-green-500 text-white text-xs px-2 py-1 rounded-md shadow-md">
-                        Copied
-                    </div>
-                )}
-                {beaconchainLink && (
-                    <a
-                        href={beaconchainLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`ml-2 ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}
-                        title="View on Beaconcha.in"
-                    >
-                        <ExternalLink size={16} />
-                    </a>
-                )}
-            </div>
-        );
-    };
-
     const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
     const calculateDays = (blocks) => {
@@ -487,7 +445,7 @@ const ClusterDetails = ({ isDarkMode, network }) => {
             <h1 className="text-4xl font-bold mb-8">Cluster</h1>
 
             {renderDetailsSection()}
-            {renderRewardsSection()}
+            {network === 'mainnet' && renderRewardsSection()}
 
             <div className="flex space-x-4 mb-6">
                 {['validators', 'blocks', 'history'].map((tab) => (
@@ -535,21 +493,22 @@ const ClusterDetails = ({ isDarkMode, network }) => {
                                     : index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
                                     }`}>
                                     <td className={`p-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}>
-                                        <CopyableText
-                                            id={`pubkey: 0x${validator.publicKey}`}
-                                            fullText={`0x${validator.publicKey}`}
-                                            displayText={`0x${validator.publicKey}`}
-                                            onClick={copyToClipboard}
+                                        <PublicKeyDisplay
+                                            publicKey={validator.publicKey}
                                             beaconchainLink={getBeaconscanUrl('validator', `0x${validator.publicKey}`)}
+                                            isDarkMode={isDarkMode}
+                                            isTruncate={false}
                                         />
                                     </td>
                                     <td className="p-3"><ValidatorStatusLabel status={validator.status} /></td>
                                     <td className="p-3">
                                         <div className="flex justify-center items-center">
-                                            <span className={`inline-block w-3 h-3 rounded-full ${validator.online
-                                                ? 'bg-green-500'
-                                                : 'bg-gray-500'
-                                                }`}></span>
+                                            {network === 'mainnet' ? (
+                                                <span className={`inline-block w-3 h-3 rounded-full ${validator.online ? 'bg-green-500' : 'bg-gray-500'
+                                                    }`}></span>
+                                            ) : (
+                                                <span>-</span>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>

@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { Link } from 'react-router-dom';
+import { PublicKeyDisplay } from './SharedComponents';
 
 const Dashboard = ({ isDarkMode, network }) => {
     const [data, setData] = useState({
         activeOperators: 0,
         activeValidators: 0,
+        activeClusters: 0,
         stakedETH: 0,
         proposedBlocks: 0,
         networkFee: "",
@@ -13,7 +16,8 @@ const Dashboard = ({ isDarkMode, network }) => {
         minimumCollateral: "",
         events: [],
         blocks: [],
-        charts: []
+        charts: [],
+        validators: []
     });
     const [error, setError] = useState(null);
 
@@ -33,15 +37,17 @@ const Dashboard = ({ isDarkMode, network }) => {
             setData({
                 activeOperators: jsonData.activeOperators,
                 activeValidators: jsonData.activeValidators,
+                activeClusters: jsonData.activeClusters,
                 stakedETH: jsonData.stakedETH,
                 proposedBlocks: jsonData.proposedBlocks,
                 networkFee: jsonData.networkFee,
                 operatorValidatorLimit: jsonData.operatorValidatorLimit,
                 liquidationThreshold: jsonData.liquidationThreshold,
                 minimumCollateral: jsonData.minimumCollateral,
-                events: jsonData.events,
-                blocks: jsonData.blocks,
-                charts: jsonData.charts
+                events: jsonData.events || [],
+                blocks: jsonData.blocks || [],
+                validators: jsonData.validators || [],
+                charts: jsonData.charts || []
             });
         } catch (error) {
             setError('Failed to fetch dashboard data. Please try again later.');
@@ -84,30 +90,39 @@ const Dashboard = ({ isDarkMode, network }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                 <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'} p-4 rounded`}>
                     <h2 className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Active Operators</h2>
-                    <p className="text-2xl font-bold">{data.activeOperators.toLocaleString()}</p>
+                    <p className="text-2xl font-bold">{(data.activeOperators || 0).toLocaleString()}</p>
                 </div>
                 <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'} p-4 rounded`}>
                     <h2 className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Active Validators</h2>
-                    <p className="text-2xl font-bold">{data.activeValidators.toLocaleString()}</p>
+                    <p className="text-2xl font-bold">{(data.activeValidators || 0).toLocaleString()}</p>
                 </div>
                 <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'} p-4 rounded`}>
                     <h2 className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Staked ETH</h2>
-                    <p className="text-2xl font-bold">{data.stakedETH.toLocaleString()}</p>
+                    <p className="text-2xl font-bold">{(data.stakedETH || 0).toLocaleString()}</p>
                 </div>
                 <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'} p-4 rounded`}>
-                    <h2 className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Proposed Blocks</h2>
-                    <p className="text-2xl font-bold">{data.proposedBlocks.toLocaleString()}</p>
+                    {network === 'mainnet' ? (
+                        <>
+                            <h2 className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Proposed Blocks</h2>
+                            <p className="text-2xl font-bold">{(data.proposedBlocks || 0).toLocaleString()}</p>
+                        </>
+                    ) : (
+                        <>
+                            <h2 className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Active Clusters</h2>
+                            <p className="text-2xl font-bold">{(data.activeClusters || 0).toLocaleString()}</p>
+                        </>
+                    )}
                 </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                 <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'} p-4 rounded`}>
                     <h2 className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Operator Validator Limit</h2>
-                    <p className="text-2xl font-bold">{data.operatorValidatorLimit.toLocaleString()}</p>
+                    <p className="text-2xl font-bold">{(data.operatorValidatorLimit || 0).toLocaleString()}</p>
                 </div>
                 <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'} p-4 rounded`}>
                     <h2 className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>Liquidation Threshold</h2>
                     <p className="text-2xl font-bold">
-                        {data.liquidationThreshold.toLocaleString()}
+                        {(data.liquidationThreshold || 0).toLocaleString()}
                         <span className="text-sm font-normal ml-1">blocks</span>
                     </p>
                 </div>
@@ -216,54 +231,109 @@ const Dashboard = ({ isDarkMode, network }) => {
                     )}
                 </div>
                 <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'} p-4 rounded`}>
-                    <h2 className="text-xl mb-4">Latest blocks</h2>
-                    {data.blocks.length > 0 ? (
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="text-left">
-                                        <th className="p-2">Epoch</th>
-                                        <th className="p-2">Slot</th>
-                                        <th className="p-2">Block</th>
-                                        <th className="p-2">Proposer</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {data.blocks.map((block, index) => (
-                                        <tr key={index} className={`${index % 2 === 0 ? 'bg-gray-100 dark:bg-gray-700' : ''}`}>
-                                            <td className="p-2">{block.epoch}</td>
-                                            <td className="p-2">
-                                                <a
-                                                    href={getBeaconscanUrl('slot', block.slot)}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-blue-500 hover:underline"
-                                                >
-                                                    {block.slot}
-                                                </a>
-                                            </td>
-                                            <td className="p-2">
-                                                <a
-                                                    href={getEtherscanUrl('block', block.blockNumber)}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-blue-500 hover:underline"
-                                                >
-                                                    {block.blockNumber}
-                                                </a>
-                                            </td>
-                                            <td className="p-2">{block.proposer}</td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                    {network === 'mainnet' ? (
+                        <>
+                            <h2 className="text-xl mb-4">Latest blocks</h2>
+                            {data.blocks.length && data.blocks.length > 0 ? (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead>
+                                            <tr className="text-left">
+                                                <th className="p-2">Epoch</th>
+                                                <th className="p-2">Slot</th>
+                                                <th className="p-2">Block</th>
+                                                <th className="p-2">Proposer</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {data.blocks.map((block, index) => (
+                                                <tr key={index} className={`${index % 2 === 0 ? 'bg-gray-100 dark:bg-gray-700' : ''}`}>
+                                                    <td className="p-2">{block.epoch}</td>
+                                                    <td className="p-2">
+                                                        <a
+                                                            href={getBeaconscanUrl('slot', block.slot)}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-blue-500 hover:underline"
+                                                        >
+                                                            {block.slot}
+                                                        </a>
+                                                    </td>
+                                                    <td className="p-2">
+                                                        <a
+                                                            href={getEtherscanUrl('block', block.blockNumber)}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="text-blue-500 hover:underline"
+                                                        >
+                                                            {block.blockNumber}
+                                                        </a>
+                                                    </td>
+                                                    <td className="p-2">{block.proposer}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>No latest blocks</p>
+                            )}
+                        </>
                     ) : (
-                        <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>No latest blocks</p>
+                        <>
+                            <h2 className="text-xl mb-4">Latest validators</h2>
+                            {data.validators && data.validators.length > 0 ? (
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead>
+                                            <tr className="text-left">
+                                                <th className="p-2">Public Key</th>
+                                                <th className="p-2">Owner</th>
+                                                <th className="p-2">Cluster ID</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {data.validators.map((validator, index) => (<tr key={index} className={`${index % 2 === 0 ? 'bg-gray-100 dark:bg-gray-700' : ''}`}>
+                                                <td className={`p-2 ${isDarkMode ? 'text-gray-100' : 'text-gray-700'}`}>
+                                                    <PublicKeyDisplay
+                                                        publicKey={validator.publicKey}
+                                                        beaconchainLink={getBeaconscanUrl('validator', `0x${validator.publicKey}`)}
+                                                        isDarkMode={isDarkMode}
+                                                        isTruncate={true}
+                                                    />
+                                                </td>
+
+
+                                                <td className="p-2">
+                                                    <Link
+                                                        to={`/account/${validator.owner}`}
+                                                        className={`hover:underline ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}
+                                                    >
+                                                        {truncateHash(validator.owner)}
+                                                    </Link>
+                                                </td>
+                                                <td className="p-2">
+                                                    <Link
+                                                        to={`/cluster/${validator.clusterId}`}
+                                                        className={`hover:underline ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'
+                                                            }`}
+                                                    >
+                                                        {truncateHash(validator.clusterId)}
+                                                    </Link>
+                                                </td>
+                                            </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ) : (
+                                <p className={`${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>No validators data</p>
+                            )}
+                        </>
                     )}
                 </div>
             </div>
-        </div>
+        </div >
     );
 };
 

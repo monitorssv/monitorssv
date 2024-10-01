@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { ExternalLink } from 'lucide-react';
 
 export const StatusLabel = ({ status }) => (
     <span className={`
@@ -88,6 +89,31 @@ export const Tooltip = ({ content, children }) => {
                 {content}
                 <div className="tooltip-arrow" />
             </div>
+        </div>
+    );
+};
+
+const truncate = (addr) => {
+    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+};
+
+export const PublicKeyDisplay = ({ publicKey, beaconchainLink, isDarkMode, isTruncate }) => {
+    return (
+        <div className="inline-flex items-center">
+            <span className="mr-2">
+                {isTruncate ? `0x${truncate(publicKey)}` : `0x${publicKey}`}
+            </span>
+            {beaconchainLink && (
+                <a
+                    href={beaconchainLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`ml-2 ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}
+                    title="View on Beaconcha.in"
+                >
+                    <ExternalLink size={16} />
+                </a>
+            )}
         </div>
     );
 };

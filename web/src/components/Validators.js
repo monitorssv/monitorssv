@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ValidatorStatusLabel, OperatorDisplay } from './SharedComponents';
-import { ExternalLink } from 'lucide-react';
+import { ValidatorStatusLabel, OperatorDisplay, PublicKeyDisplay } from './SharedComponents';
 
 const Validators = ({ isDarkMode, network }) => {
     const [validators, setValidators] = useState([]);
@@ -12,7 +11,6 @@ const Validators = ({ isDarkMode, network }) => {
     const [totalItems, setTotalItems] = useState(0);
     const [error, setError] = useState(null);
     const [shouldFetch, setShouldFetch] = useState(true);
-    const [copiedStates, setCopiedStates] = useState({});
 
     useEffect(() => {
         if (shouldFetch || searchTerm === "") {
@@ -61,54 +59,11 @@ const Validators = ({ isDarkMode, network }) => {
         setShouldFetch(true);
     }
 
-    const copyToClipboard = (id, text) => {
-        navigator.clipboard.writeText(text).then(() => {
-            setCopiedStates(prev => ({ ...prev, [id]: true }));
-            setTimeout(() => {
-                setCopiedStates(prev => ({ ...prev, [id]: false }));
-            }, 1000);
-        }).catch(err => {
-            console.error('Failed to copy: ', err);
-        });
-    };
-
     const getBeaconscanUrl = (type, value) => {
         const baseUrl = network === 'mainnet'
             ? 'https://beaconcha.in'
             : 'https://holesky.beaconcha.in';
         return `${baseUrl}/${type}/${value}`;
-    };
-
-    const CopyableText = ({ id, fullText, displayText, onClick, beaconchainLink }) => {
-        const isCopied = copiedStates[id];
-
-        return (
-            <div className="relative inline-block flex items-center">
-                <span
-                    className="cursor-pointer hover:underline mr-2"
-                    onClick={() => onClick(id, fullText)}
-                    title={`Click to copy full ${id}`}
-                >
-                    {displayText}
-                </span>
-                {isCopied && (
-                    <div className="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 bg-green-500 text-white text-xs px-2 py-1 rounded-md shadow-md">
-                        Copied
-                    </div>
-                )}
-                {beaconchainLink && (
-                    <a
-                        href={beaconchainLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={`ml-2 ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}
-                        title="View on Beaconcha.in"
-                    >
-                        <ExternalLink size={16} />
-                    </a>
-                )}
-            </div>
-        );
     };
 
     const truncateAddr = (addr) => {
@@ -157,15 +112,13 @@ const Validators = ({ isDarkMode, network }) => {
                         {validators.map((validator, index) => (
                             <tr key={validator.publicKey} className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
                                 <td className={`p-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}>
-                                    <CopyableText
-                                        id={`pubkey: 0x${validator.publicKey}`}
-                                        fullText={`0x${validator.publicKey}`}
-                                        displayText={`0x${truncateAddr(validator.publicKey)}`}
-                                        onClick={copyToClipboard}
+                                    <PublicKeyDisplay
+                                        publicKey={validator.publicKey}
                                         beaconchainLink={getBeaconscanUrl('validator', `0x${validator.publicKey}`)}
+                                        isDarkMode={isDarkMode}
+                                        isTruncate={true}
                                     />
                                 </td>
-
 
                                 <td className="p-3">
                                     <Link
@@ -201,10 +154,12 @@ const Validators = ({ isDarkMode, network }) => {
                                 </td>
                                 <td className="p-3">
                                     <div className="flex justify-center items-center">
-                                        <span className={`inline-block w-3 h-3 rounded-full ${validator.online
-                                            ? 'bg-green-500'
-                                            : 'bg-gray-500'
-                                            }`}></span>
+                                        {network === 'mainnet' ? (
+                                            <span className={`inline-block w-3 h-3 rounded-full ${validator.online ? 'bg-green-500' : 'bg-gray-500'
+                                                }`}></span>
+                                        ) : (
+                                            <span>-</span>
+                                        )}
                                     </div>
                                 </td>
                             </tr>

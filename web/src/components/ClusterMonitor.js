@@ -5,7 +5,7 @@ import { useWeb3ModalProvider } from '@web3modal/ethers/react';
 import { BrowserProvider } from 'ethers';
 import { AlertCircle, CheckCircle, Wallet, LogOut, Send, Eye, Trash2 } from 'lucide-react';
 
-const ClusterMonitor = ({ isDarkMode }) => {
+const ClusterMonitor = ({ isDarkMode, network }) => {
     const [isOwner, setIsOwner] = useState(false);
     const [alertMethod, setAlertMethod] = useState('discord');
     const [discordWebhook, setDiscordWebhook] = useState('');
@@ -158,9 +158,9 @@ const ClusterMonitor = ({ isDarkMode }) => {
         setConfigOptions({
             reportOperatorFeeChanges: config.report_operator_fee_change,
             reportNetworkFeeChanges: config.report_network_fee_change,
-            reportBlockProposals: config.report_propose_block,
-            reportMissedBlocks: config.report_missed_block,
-            reportBalanceDecrease: config.report_balance_decrease,
+            reportBlockProposals: network === 'holesky' ? false : config.report_propose_block,
+            reportMissedBlocks: network === 'holesky' ? false : config.report_missed_block,
+            reportBalanceDecrease: network === 'holesky' ? false : config.report_balance_decrease,
             reportExitedButNotRemovedValidators: config.report_exited_but_not_removed,
             weeklyReport: config.report_weekly,
         });
@@ -219,9 +219,9 @@ const ClusterMonitor = ({ isDarkMode }) => {
                 report_liquidation_threshold: liquidationThresholdDays,
                 report_operator_fee_change: configOptions.reportOperatorFeeChanges,
                 report_network_fee_change: configOptions.reportNetworkFeeChanges,
-                report_propose_block: configOptions.reportBlockProposals,
-                report_missed_block: configOptions.reportMissedBlocks,
-                report_balance_decrease: configOptions.reportBalanceDecrease,
+                report_propose_block: network === 'holesky' ? false : configOptions.reportBlockProposals,
+                report_missed_block: network === 'holesky' ? false : configOptions.reportMissedBlocks,
+                report_balance_decrease: network === 'holesky' ? false : configOptions.reportBalanceDecrease,
                 report_exited_but_not_removed: configOptions.reportExitedButNotRemovedValidators,
                 report_weekly: configOptions.weeklyReport,
             };
@@ -284,6 +284,13 @@ const ClusterMonitor = ({ isDarkMode }) => {
             setShowConfig(true);
         }
     }
+
+    const shouldRenderOption = (optionKey) => {
+        if (network === 'holesky') {
+            return !['reportBlockProposals', 'reportMissedBlocks', 'reportBalanceDecrease'].includes(optionKey);
+        }
+        return true;
+    };
 
     const bgColor = isDarkMode ? 'bg-gray-900' : 'bg-gray-100';
     const textColor = isDarkMode ? 'text-white' : 'text-gray-800';
@@ -391,9 +398,9 @@ const ClusterMonitor = ({ isDarkMode }) => {
                                 />
                                 <span>days</span>
                             </div>
-                            <div>Alert when the validator is slashed</div>
+                            {network === 'mainnet' && <div>Alert when the validator is slashed</div>}
                             {Object.entries(configOptions).map(([key, value]) => (
-                                <div key={key} className="flex items-center">
+                                shouldRenderOption(key) && <div key={key} className="flex items-center">
                                     <input
                                         type="checkbox"
                                         id={key}

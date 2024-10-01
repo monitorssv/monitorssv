@@ -44,7 +44,11 @@ createWeb3Modal({
 
 function App() {
   const [isDarkMode, setIsDarkMode] = useState(true);
-  const [network, setNetwork] = useState('mainnet');
+  const [network, setNetwork] = useState(() => {
+    // Determine the initial network based on the current hostname
+    const hostname = window.location.hostname;
+    return hostname.startsWith('holesky.') ? 'holesky' : 'mainnet';
+  });
   const currentYear = new Date().getFullYear();
   const { setThemeMode } = useWeb3ModalTheme()
 
@@ -75,6 +79,28 @@ function AppContent({ isDarkMode, toggleDarkMode, network, setNetwork, currentYe
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  const handleNetworkChange = (selectedNetwork) => {
+    setNetwork(selectedNetwork);
+
+    const currentHostname = window.location.hostname;
+    const currentPort = window.location.port;
+    const portSuffix = currentPort ? `:${currentPort}` : '';
+    const protocol = window.location.protocol;
+
+    if (selectedNetwork === 'holesky') {
+      // Redirect to the root of the Holesky subdomain
+      if (!currentHostname.startsWith('holesky.')) {
+        window.location.href = `${protocol}//holesky.${currentHostname}${portSuffix}`;
+      }
+    } else if (selectedNetwork === 'mainnet') {
+      // Redirect to the root of the main domain if we're on a subdomain
+      if (currentHostname.startsWith('holesky.')) {
+        const mainDomain = currentHostname.substring(currentHostname.indexOf('.') + 1);
+        window.location.href = `${protocol}//${mainDomain}${portSuffix}`;
+      }
+    }
+  };
+
   const handleClaimClick = () => {
     navigate('/claim');
   };
@@ -98,19 +124,19 @@ function AppContent({ isDarkMode, toggleDarkMode, network, setNetwork, currentYe
               </h1>
             </div>
             <div className="hidden md:flex items-center space-x-4">
-              <NavItems isDarkMode={isDarkMode} />
+              <NavItems isDarkMode={isDarkMode} network={network} />
             </div>
             <div className="flex items-center space-x-4">
               <select
                 value={network}
-                onChange={(e) => setNetwork(e.target.value)}
+                onChange={(e) => handleNetworkChange(e.target.value)}
                 className={`rounded-md px-3 py-1 text-sm focus:outline-none focus:ring-2 transition-all duration-300 ${isDarkMode
                   ? 'bg-gray-800 text-gray-200 border-gray-700 focus:ring-indigo-500'
                   : 'bg-gray-100 text-gray-800 border-gray-300 focus:ring-indigo-500'
                   }`}
               >
-                <option value="Mainnet">Mainnet</option>
-                {/*<option value="Holesky">Holesky</option>*/}
+                <option value="mainnet">Mainnet</option>
+                <option value="holesky">Holesky</option>
               </select>
               <button
                 onClick={toggleDarkMode}
@@ -138,12 +164,12 @@ function AppContent({ isDarkMode, toggleDarkMode, network, setNetwork, currentYe
 
       <nav className={`md:hidden ${isMenuOpen ? 'block' : 'hidden'} ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
         <div className="px-2 pt-2 pb-3 space-y-1">
-          <NavItems isDarkMode={isDarkMode} mobile />
+          <NavItems isDarkMode={isDarkMode} mobile network={network} />
         </div>
       </nav>
 
       <main className="flex-grow max-w-7xl mx-auto px-4 py-8 w-full">
-        {isDashboardPage && (
+        {isDashboardPage && network === 'mainnet' && (
           <div className={`mb-8 p-6 rounded-xl shadow-lg flex flex-col md:flex-row items-center justify-between transform hover:scale-102 transition-all duration-300 ${isDarkMode
             ? 'bg-gradient-to-r from-blue-900 via-indigo-900 to-purple-900 text-white'
             : 'bg-gradient-to-r from-blue-400 to-indigo-500 text-white'
@@ -172,7 +198,7 @@ function AppContent({ isDarkMode, toggleDarkMode, network, setNetwork, currentYe
             <Route path="/cluster/:id" element={<ClusterDetails isDarkMode={isDarkMode} network={network} />} />
             <Route path="/account/:address" element={<AccountDetails isDarkMode={isDarkMode} network={network} />} />
             <Route path="/validators" element={<Validators isDarkMode={isDarkMode} network={network} />} />
-            <Route path="/claim" element={<Claim isDarkMode={isDarkMode} />} />
+            {network === 'mainnet' && <Route path="/claim" element={<Claim isDarkMode={isDarkMode} />} />}
             <Route path="/monitor" element={<ClusterMonitor isDarkMode={isDarkMode} network={network} />} />
           </Routes>
         </div>
@@ -204,15 +230,18 @@ function AppContent({ isDarkMode, toggleDarkMode, network, setNetwork, currentYe
   );
 }
 
-function NavItems({ isDarkMode, mobile = false }) {
-  const navItems = [
+function NavItems({ isDarkMode, mobile = false, network }) {
+  const baseNavItems = [
     { to: "/", icon: <Grid className="w-5 h-5" />, label: "Dashboard" },
     { to: "/operators", icon: <Users className="w-5 h-5" />, label: "Operators" },
     { to: "/clusters", icon: <Hexagon className="w-5 h-5" />, label: "Clusters" },
     { to: "/validators", icon: <Shield className="w-5 h-5" />, label: "Validators" },
-    { to: "/claim", icon: <Award className="w-5 h-5" />, label: "Claim" },
     { to: "/monitor", icon: <Bell className="w-5 h-5" />, label: "Monitor" },
   ];
+
+  const navItems = network === 'mainnet'
+    ? [...baseNavItems, { to: "/claim", icon: <Award className="w-5 h-5" />, label: "Claim" }]
+    : baseNavItems;
 
   return navItems.map((item) => (
     <NavLink

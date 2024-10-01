@@ -215,6 +215,30 @@ func (s *Store) BatchUpdateOperatorValidatorCount(operatorIds []uint64, incremen
 	})
 }
 
+func (s *Store) BatchUpdateOperatorValidatorCounts(operatorIds []uint64, count uint32, increment bool) error {
+	return s.db.Transaction(func(tx *gorm.DB) error {
+		var updateSQL string
+		if increment {
+			updateSQL = "UPDATE operator_infos SET validator_count = validator_count + ? WHERE operator_id IN ?"
+		} else {
+			updateSQL = "UPDATE operator_infos SET validator_count = CASE WHEN validator_count >= ? THEN validator_count - ? ELSE 0 END WHERE operator_id IN ?"
+		}
+
+		var result *gorm.DB
+		if increment {
+			result = tx.Exec(updateSQL, count, operatorIds)
+		} else {
+			result = tx.Exec(updateSQL, count, count, operatorIds)
+		}
+
+		if result.Error != nil {
+			return result.Error
+		}
+
+		return nil
+	})
+}
+
 func (s *Store) UpdateOperatorClusterIds(operatorId uint64, clusterId string, increment bool) error {
 	var operator OperatorInfo
 	if err := s.db.Where("operator_id = ?", operatorId).First(&operator).Error; err != nil {

@@ -16,6 +16,15 @@ func TestStore_BatchUpdateOperatorValidatorCount(t *testing.T) {
 	}
 }
 
+func TestStore_BatchUpdateOperatorValidatorCounts(t *testing.T) {
+	db := initDB(t)
+
+	err := db.BatchUpdateOperatorValidatorCounts([]uint64{1, 2, 3, 4}, 6, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestStore_GetActiveOperatorCount(t *testing.T) {
 	db := initDB(t)
 

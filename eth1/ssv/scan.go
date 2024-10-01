@@ -2,6 +2,7 @@ package ssv
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -255,6 +256,11 @@ func (s *SSV) processBlockEvents(logs []ethtypes.Log) error {
 				ssvLog.Warnw("processBlockEvents: SSVOperator PubKey Unpack", "operatorId", operatorId, "err", err)
 			} else {
 				pubKey = pubKeyUnpack[0].(string)
+				_, err = base64.StdEncoding.DecodeString(pubKey)
+				if err != nil {
+					ssvLog.Warnw("invalid pubKey", "operatorId", operatorId, "pubKey", pubKey)
+					pubKey = hex.EncodeToString(pubKeyBytes)
+				}
 			}
 
 			operatorFee := data[1].(*big.Int)
@@ -540,8 +546,10 @@ func (s *SSV) processBlockEvents(logs []ethtypes.Log) error {
 				return err
 			}
 
-			if err = s.store.BatchUpdateOperatorValidatorCount(operatorIds, false); err != nil {
-				return err
+			if cluster.Active {
+				if err = s.store.BatchUpdateOperatorValidatorCount(operatorIds, false); err != nil {
+					return err
+				}
 			}
 
 			if cluster.ValidatorCount == 0 {
@@ -594,12 +602,34 @@ func (s *SSV) processBlockEvents(logs []ethtypes.Log) error {
 				if err = s.store.ClusterLiquidation(clusterId, vLog.BlockNumber); err != nil {
 					return err
 				}
+
+				if err = s.store.BatchUpdateOperatorValidatorCounts(operatorIds, cluster.ValidatorCount, false); err != nil {
+					return err
+				}
+
+				for _, operatorId := range operatorIds {
+					if err = s.store.UpdateOperatorClusterIds(operatorId, clusterId, false); err != nil {
+						return err
+					}
+				}
+			} else {
+				// ClusterReactivated
+				if err = s.store.BatchUpdateOperatorValidatorCounts(operatorIds, cluster.ValidatorCount, true); err != nil {
+					return err
+				}
+
+				for _, operatorId := range operatorIds {
+					if err = s.store.UpdateOperatorClusterIds(operatorId, clusterId, true); err != nil {
+						return err
+					}
+				}
+
+				s.calcLiquidation(clusterId, owner, operatorIds, cluster)
 			}
 
 			if err = s.recordEvent(vLog, owner.String(), event.Name, clusterId); err != nil {
 				return err
 			}
-			s.calcLiquidation(clusterId, owner, operatorIds, cluster)
 		case ClusterWithdrawn, ClusterDeposited:
 			var owner common.Address
 			copy(owner[:], vLog.Topics[1][12:])

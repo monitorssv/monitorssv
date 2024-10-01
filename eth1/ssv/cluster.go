@@ -21,14 +21,6 @@ type Cluster struct {
 	ClusterInfo ISSVNetworkCoreCluster
 }
 
-type ISSVNetworkCoreCluster struct {
-	ValidatorCount  uint32
-	NetworkFeeIndex uint64
-	Index           uint64
-	Active          bool
-	Balance         *big.Int
-}
-
 func CalcClusterId(owner common.Address, operatorIds []uint64) string {
 	var packed []byte
 	packed = append(packed, owner.Bytes()...)

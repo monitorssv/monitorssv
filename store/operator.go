@@ -14,7 +14,7 @@ type OperatorInfo struct {
 	OperatorId           uint64 `gorm:"uniqueIndex" json:"operator_id"`
 	PubKey               string `json:"pub_key"`
 	OperatorName         string `json:"operator_name"`
-	ValidatorCount       uint32 `gorm:"index" json:"validator_count"`
+	ValidatorCount       uint32 `json:"validator_count"`
 	ClusterIds           string `json:"cluster_ids"`
 	OperatorFee          string `json:"operator_fee"`
 	OperatorEarnings     string `gorm:"default:-" json:"operator_earnings"`
@@ -195,6 +195,10 @@ func (s *Store) UpdateWhitelistingContract(operatorId uint64, whitelistingContra
 
 func (s *Store) RemoveOperator(operatorId uint64, removeBlock int64) error {
 	return s.db.Model(&OperatorInfo{}).Where(&OperatorInfo{OperatorId: operatorId}).Update("remove_block", removeBlock).Error
+}
+
+func (s *Store) UpdateOperatorValidatorCount(operatorId uint64, count uint32) error {
+	return s.db.Model(&OperatorInfo{}).Where(&OperatorInfo{OperatorId: operatorId}).Update("validator_count", count).Error
 }
 
 func (s *Store) BatchUpdateOperatorValidatorCount(operatorIds []uint64, increment bool) error {

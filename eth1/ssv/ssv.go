@@ -181,6 +181,10 @@ func (s *SSV) calcAllClusterLiquidation() error {
 		return err
 	}
 	for _, clusterInfo := range clusterInfos {
+		if !clusterInfo.Active {
+			ssvLog.Infow("cluster liquidated", "clusterId", clusterInfo.ClusterID, "validatorCount", clusterInfo.ValidatorCount)
+			continue
+		}
 		operatorIds, err := getOperatorIds(clusterInfo.OperatorIds)
 		if err != nil {
 			return err

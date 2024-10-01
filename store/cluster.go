@@ -74,6 +74,15 @@ func (s *Store) GetAllClusters() ([]ClusterInfo, error) {
 	return clusters, nil
 }
 
+func (s *Store) GetActiveClusterCount() (int64, error) {
+	var totalCount int64
+	err := s.db.Model(&ClusterInfo{}).Where("active = 1").Count(&totalCount).Error
+	if err != nil {
+		return 0, err
+	}
+	return totalCount, nil
+}
+
 func (s *Store) GetActiveClusters() ([]ClusterInfo, error) {
 	var clusters []ClusterInfo
 	err := s.db.Model(&ClusterInfo{}).Where("validator_count != 0").Find(&clusters).Error

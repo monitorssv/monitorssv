@@ -87,6 +87,10 @@ func (s *SSV) GetLastProcessedBlock() uint64 {
 	return s.lastProcessedBlock
 }
 
+func (s *SSV) GetCfg() *config.Config {
+	return s.cfg
+}
+
 func (s *SSV) ScanSSVEventLoop() {
 	ticker := time.NewTicker(24 * time.Second)
 	for {
@@ -410,6 +414,7 @@ func (s *SSV) updateClusterEoaOwner() {
 				ssvLog.Warnf("failed to UpdateClusterEoaOwner: %v", err)
 				continue
 			}
+			continue
 		}
 
 		contractOwners = append(contractOwners, owner)
@@ -419,20 +424,32 @@ func (s *SSV) updateClusterEoaOwner() {
 		return
 	}
 
+	// Etherscan only provides an API to obtain the creator of the mainnet network.
+	// Obtaining the creator through the Ethereum full node API will generate a large number of polling requests.
+	// Since the monitoring service of the holesky network is not necessary, the contract owner is not obtained here.
+
 	ticker := time.NewTicker(250 * time.Millisecond) // limit 5 calls/s
 	defer ticker.Stop()
 
 	for _, owner := range contractOwners {
 		<-ticker.C
 
-		info, err := GetContractCreator(owner, s.cfg.EtherScan.Endpoint, s.cfg.EtherScan.ApiKey)
-		if err != nil {
-			ssvLog.Warnf("failed to GetContractCreator: %v", err)
-			continue
+		contractCreator := "0x"
+		if s.cfg.Network == "mainnet" {
+			info, err := GetContractCreator(owner, s.cfg.EtherScan.Endpoint, s.cfg.EtherScan.ApiKey)
+			if err != nil {
+				ssvLog.Warnf("failed to GetContractCreator: %v", err)
+				continue
+			}
+
+			ssvLog.Infow("cluster owner", "owner", info.ContractAddress, "eoaOwner", info.ContractCreator)
+			contractCreator = info.ContractCreator
+		} else { // holesky
+			contractCreator = "contract"
+			ssvLog.Infow("cluster owner: holesky", "owner", owner, "eoaOwner", contractCreator)
 		}
 
-		ssvLog.Infow("cluster owner", "owner", info.ContractAddress, "eoaOwner", info.ContractCreator)
-		err = s.store.UpdateClusterEoaOwner(info.ContractAddress, info.ContractCreator)
+		err = s.store.UpdateClusterEoaOwner(owner, contractCreator)
 		if err != nil {
 			ssvLog.Warnf("failed to UpdateClusterEoaOwner: %v", err)
 			continue

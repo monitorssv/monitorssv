@@ -97,6 +97,15 @@ func (s *Store) getValidatorChanges() ([]BlockChange, error) {
 	return changes, nil
 }
 
+func (s *Store) GetLatestValidators() ([]ValidatorInfo, error) {
+	var validators []ValidatorInfo
+	err := s.db.Model(&ValidatorInfo{}).Order("id DESC").Where("remove_block = 0").Limit(10).Find(&validators).Error
+	if err != nil {
+		return nil, err
+	}
+	return validators, nil
+}
+
 func (s *Store) GetActiveValidatorCount() (int64, error) {
 	var totalCount int64
 	err := s.db.Model(&ValidatorInfo{}).Where("remove_block = 0").Count(&totalCount).Error

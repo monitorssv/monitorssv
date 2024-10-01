@@ -33,4 +33,7 @@ func TestGetActiveClusters(t *testing.T) {
 	t.Log(len(activeClusters))
 	cost := time.Since(start)
 	t.Log(cost)
+
+	count, err := db.GetActiveClusterCount()
+	t.Log(count, err)
 }

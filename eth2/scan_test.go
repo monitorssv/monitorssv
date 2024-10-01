@@ -13,7 +13,7 @@ import (
 
 func initBeaconMonitor(t *testing.T) *BeaconMonitor {
 	_ = logging.SetLogLevel("*", "INFO")
-	cfg, err := config.InitConfig("../config/config.yaml")
+	cfg, err := config.InitConfig("../deploy/monitorssv/config.yaml")
 	if err != nil {
 		t.Fatal(err)
 	}

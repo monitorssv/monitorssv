@@ -58,14 +58,17 @@ func (cfg *Config) Validate() error {
 	if cfg.Network != "holesky" && cfg.Network != "mainnet" {
 		return fmt.Errorf("invalid network: %v", cfg.Network)
 	}
-	if cfg.Eth1Rpc == "" || cfg.Eth2Rpc == "" {
-		return fmt.Errorf("invalid network: %v", cfg.Network)
+	if cfg.Eth1Rpc == "" {
+		return fmt.Errorf("invalid eth1 rpc: %v", cfg.Network)
+	}
+	if cfg.Network == "mainnet" && cfg.Eth2Rpc == "" {
+		return fmt.Errorf("invalid eth2 rpc: %v", cfg.Network)
 	}
 
-	if cfg.EtherScan.ApiKey == "" {
+	if cfg.Network == "mainnet" && cfg.EtherScan.ApiKey == "" {
 		return fmt.Errorf("invalid etherscan apiKey")
 	}
-	if cfg.EtherScan.Endpoint == "" {
+	if cfg.Network == "mainnet" && cfg.EtherScan.Endpoint == "" {
 		return fmt.Errorf("invalid etherscan endpoint")
 	}
 

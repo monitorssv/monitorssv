@@ -6,7 +6,7 @@ COMPONENTS := api web
 .PHONY: build
 build:
 	go mod tidy
-	go build -o monitorssv cmd/monitorssv/main.go
+	go build -o monitorssv ./cmd
 
 .PHONY: build-web
 build-web:

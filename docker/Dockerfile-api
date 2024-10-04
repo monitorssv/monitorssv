@@ -5,7 +5,7 @@ ENV GOPROXY=https://goproxy.cn
 RUN echo $GOPATH
 WORKDIR /app
 ADD . .
-RUN go build -o /go/bin/monitorssv cmd/monitorssv/main.go
+RUN go build -o /go/bin/monitorssv ./cmd
 
 FROM golang:1.22 AS runner
 COPY --from=builder /go/bin/monitorssv .

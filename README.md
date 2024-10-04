@@ -50,4 +50,4 @@ Owner can configure monitoring service
 - The validator balance decreased or even slashed.
 
 ## License
-Dual-licensed under MIT
+MIT

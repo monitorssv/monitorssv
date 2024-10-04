@@ -18,7 +18,6 @@ type ClusterInfo struct {
 	Index                uint64 `json:"cluster_index"`
 	Active               bool   `json:"active"`
 	Balance              string `json:"balance"`
-	FeeAddress           string `json:"fee_address"`
 	BurnFee              uint64 `json:"burn_fee"`
 	OnChainBalance       string `json:"on_chain_balance"`
 	LiquidationBlock     uint64 `json:"liquidation_block"`
@@ -171,10 +170,6 @@ func (s *Store) CreateOrUpdateCluster(info *ClusterInfo) error {
 	cluster.Active = info.Active
 	cluster.Balance = info.Balance
 	return s.db.Save(&cluster).Error
-}
-
-func (s *Store) UpdateClusterFeeAddress(owner string, feeAddress string) error {
-	return s.db.Model(&ClusterInfo{}).Where(&ClusterInfo{Owner: owner}).Update("fee_address", feeAddress).Error
 }
 
 func (s *Store) ClusterLiquidation(clusterID string, liquidationBlock uint64) error {

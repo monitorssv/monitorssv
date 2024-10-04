@@ -48,6 +48,10 @@ func NewStore(cfg *config.Config) (*Store, error) {
 	if err != nil {
 		return nil, err
 	}
+	err = db.AutoMigrate(&FeeAddressInfo{})
+	if err != nil {
+		return nil, err
+	}
 	err = db.AutoMigrate(&EventInfo{})
 	if err != nil {
 		return nil, err

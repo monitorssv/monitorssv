@@ -472,8 +472,7 @@ func (s *SSV) processBlockEvents(logs []ethtypes.Log) error {
 				Index:            cluster.Index,
 				Active:           cluster.Active,
 				Balance:          cluster.Balance.String(),
-				FeeAddress:       owner.String(), // this is only set when create Cluster
-				LiquidationBlock: 0,              // not calculated
+				LiquidationBlock: 0, // not calculated
 			}); err != nil {
 				return err
 			}
@@ -697,7 +696,10 @@ func (s *SSV) processBlockEvents(logs []ethtypes.Log) error {
 				return err
 			}
 			recipientAddress := data[0].(common.Address)
-			if err = s.store.UpdateClusterFeeAddress(owner.String(), recipientAddress.String()); err != nil {
+			if err = s.store.CreateOrUpdateClusterFeeAddress(&store.FeeAddressInfo{
+				Owner:      owner.String(),
+				FeeAddress: recipientAddress.String(),
+			}); err != nil {
 				return err
 			}
 

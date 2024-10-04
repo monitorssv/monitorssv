@@ -180,11 +180,19 @@ func (ms *MonitorSSV) GetClusterDetails(c *gin.Context) {
 		return
 	}
 
+	var feeRecipientAddress string = clusterInfo.Owner
+	feeAddress, err := ms.store.GetClusterFeeAddress(clusterInfo.Owner)
+	if err != nil {
+		monitorLog.Errorw("GetClusterDetails: GetClusterFeeAddress", "err", err.Error())
+	} else if feeAddress.FeeAddress != "" {
+		feeRecipientAddress = feeAddress.FeeAddress
+	}
+
 	var clusterDetails ClusterDetails
 	clusterDetails.ID = clusterId
 	clusterDetails.Owner = clusterInfo.Owner
 	clusterDetails.Active = clusterInfo.Active
-	clusterDetails.FeeRecipientAddress = clusterInfo.FeeAddress
+	clusterDetails.FeeRecipientAddress = feeRecipientAddress
 
 	burnFeeInt := big.NewInt(0).SetUint64(clusterInfo.BurnFee)
 	fee := big.NewInt(0).Mul(burnFeeInt, big.NewInt(2613400))

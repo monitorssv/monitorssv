@@ -5,15 +5,6 @@ import (
 	"time"
 )
 
-func TestUpdateClusterFeeAddress(t *testing.T) {
-	db := initDB(t)
-
-	err := db.UpdateClusterFeeAddress("0xabf1ADf95AA7eD243672CeFC194E8411779300df", "0x69eEd4905BC2A4a6381F2791c7644D1018AaC843")
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
 func TestCreateClustersOwner(t *testing.T) {
 	db := initDB(t)
 	owners, err := db.GetNoUpdatedClustersOwner()

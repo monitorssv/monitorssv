@@ -3,8 +3,6 @@ package service
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/monitorssv/monitorssv/store"
-	"strconv"
-	"strings"
 )
 
 type DashboardData struct {
@@ -100,19 +98,10 @@ func (ms *MonitorSSV) Dashboard(c *gin.Context) {
 
 		var validators = make([]Validator, 0)
 		for _, info := range latestValidators {
-			operatorIds := strings.Split(info.OperatorIds, ",")
-			var operators = make([]OperatorIntro, 0)
-			for _, operatorId := range operatorIds {
-				id, _ := strconv.Atoi(operatorId)
-				operators = append(operators, ms.getOperatorIntro(uint64(id)))
-			}
 			validators = append(validators, Validator{
 				PublicKey: info.PublicKey,
 				Owner:     info.Owner,
-				Operators: operators,
 				ClusterId: info.ClusterID,
-				Status:    info.Status,
-				Online:    info.IsOnline,
 			})
 		}
 		dashboardData.Validators = validators

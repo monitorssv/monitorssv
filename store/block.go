@@ -36,7 +36,7 @@ func (s *Store) CreateBlock(info *BlockInfo) error {
 
 func (s *Store) GetLatestBlocks() ([]BlockInfo, error) {
 	var blocks []BlockInfo
-	err := s.db.Model(&BlockInfo{}).Order("id DESC").Where("is_missed = 0").Limit(10).Find(&blocks).Error
+	err := s.db.Model(&BlockInfo{}).Order("slot DESC").Where("is_missed = 0").Limit(10).Find(&blocks).Error
 	if err != nil {
 		return nil, err
 	}

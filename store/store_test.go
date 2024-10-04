@@ -7,7 +7,7 @@ import (
 )
 
 func initDB(t *testing.T) *Store {
-	cfg, err := config.InitConfig("../deploy/monitorssv_holesky/config.yaml")
+	cfg, err := config.InitConfig("../deploy/monitorssv/config.yaml")
 	if err != nil {
 		t.Fatal(err)
 	}

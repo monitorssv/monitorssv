@@ -40,7 +40,6 @@ const Validators = ({ isDarkMode, network }) => {
     const handleSearch = (e) => {
         e.preventDefault();
         setCurrentPage(1);
-        setShouldFetch(true);
         fetchValidators();
     };
 

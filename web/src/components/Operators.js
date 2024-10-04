@@ -41,7 +41,6 @@ const Operators = ({ isDarkMode }) => {
     const handleSearch = (e) => {
         e.preventDefault();
         setCurrentPage(1);
-        setShouldFetch(true);
         fetchOperators();
     };
 

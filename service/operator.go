@@ -41,7 +41,7 @@ func (ms *MonitorSSV) getOperatorIntro(id uint64) OperatorIntro {
 	if operatorInfo != nil && operatorInfo.OperatorName != "" {
 		operator.Name = operatorInfo.OperatorName
 	} else {
-		operator.Name = fmt.Sprintf("Operator-%d", id)
+		operator.Name = fmt.Sprintf("Operator %d", id)
 	}
 
 	return operator
@@ -136,12 +136,12 @@ func (ms *MonitorSSV) GetOperators(c *gin.Context) {
 
 		operatorName := info.OperatorName
 		if operatorName == "" {
-			operatorName = fmt.Sprintf("Operator-%d", info.OperatorId)
+			operatorName = fmt.Sprintf("Operator %d", info.OperatorId)
 		}
 
 		operators = append(operators, Operator{
 			ID:                 info.OperatorId,
-			Name:               info.OperatorName,
+			Name:               operatorName,
 			Owner:              info.Owner,
 			Validators:         info.ValidatorCount,
 			OperatorFee:        operatorFee,

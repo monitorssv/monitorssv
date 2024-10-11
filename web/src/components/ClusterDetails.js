@@ -311,7 +311,7 @@ const ClusterDetails = ({ isDarkMode, network }) => {
             </div>
             <div className="mb-1">
                 <span className="font-semibold mr-2">Operational Runaway:</span>
-                {calculateDays(clusterData.operationalRunaway)}
+                {clusterData.validatorCount === 0 ? '--' : calculateDays(clusterData.operationalRunaway)}
                 <span className="ml-1 text-sm text-gray-400">days</span>
             </div>
             <div className="mb-1">

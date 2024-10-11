@@ -20,6 +20,16 @@ func (s *EventInfo) TableName() string {
 	return "event_infos"
 }
 
+func (s *Store) TxHashLogIndexIsExist(txHash string, logIndex uint) bool {
+	var eventInfo EventInfo
+	result := s.db.Select("id").Where("tx_hash = ? AND log_index = ?", txHash, logIndex).First(&eventInfo)
+	if errors.Is(result.Error, gorm.ErrRecordNotFound) {
+		return false
+	}
+
+	return true
+}
+
 func (s *Store) GetLatestEvents() ([]EventInfo, error) {
 	var events []EventInfo
 	err := s.db.Model(&EventInfo{}).Order("id DESC").Limit(10).Find(&events).Error
@@ -37,7 +47,7 @@ func (s *Store) GetEventByClusterId(page int, itemsPerPage int, clusterID string
 		return nil, 0, err
 	}
 	var events []EventInfo
-	err = s.db.Model(&EventInfo{}).Where(&EventInfo{ClusterID: clusterID}).Offset(offset).Limit(perPage).Find(&events).Error
+	err = s.db.Model(&EventInfo{}).Where(&EventInfo{ClusterID: clusterID}).Order("id DESC").Offset(offset).Limit(perPage).Find(&events).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, 0, nil
 	}

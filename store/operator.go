@@ -142,7 +142,7 @@ func (s *Store) GetOperatorByOwner(page, itemsPerPage int, owner string) ([]Oper
 	}
 
 	var operators []OperatorInfo
-	err = s.db.Model(&OperatorInfo{}).Where(&OperatorInfo{Owner: owner}).Offset(offset).Limit(perPage).Find(&operators).Error
+	err = s.db.Model(&OperatorInfo{}).Where(&OperatorInfo{Owner: owner}).Order("operator_id DESC").Offset(offset).Limit(perPage).Find(&operators).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, 0, nil
 	}
@@ -217,6 +217,26 @@ func (s *Store) BatchUpdateOperatorValidatorCount(operatorIds []uint64, incremen
 
 		return nil
 	})
+}
+
+func (s *Store) GetOperatorValidatorCount(clusterIdsStr string) (uint32, error) {
+	if clusterIdsStr == "" {
+		return 0, nil
+	}
+
+	clusterIds := strings.Split(clusterIdsStr, ",")
+
+	var totalCount uint32
+	for _, clusterId := range clusterIds {
+		cluster, err := s.GetClusterByClusterId(clusterId)
+		if err != nil {
+			return 0, err
+		}
+		if cluster.Active {
+			totalCount += cluster.ValidatorCount
+		}
+	}
+	return totalCount, nil
 }
 
 func (s *Store) BatchUpdateOperatorValidatorCounts(operatorIds []uint64, count uint32, increment bool) error {

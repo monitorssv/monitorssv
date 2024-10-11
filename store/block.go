@@ -84,7 +84,7 @@ func (s *Store) GetBlockByClusterId(page int, itemsPerPage int, clusterID string
 		return nil, 0, err
 	}
 	var blocks []BlockInfo
-	err = s.db.Model(&BlockInfo{}).Where(&BlockInfo{ClusterID: clusterID}).Offset(offset).Limit(perPage).Find(&blocks).Error
+	err = s.db.Model(&BlockInfo{}).Where(&BlockInfo{ClusterID: clusterID}).Order("slot DESC").Offset(offset).Limit(perPage).Find(&blocks).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, 0, nil
 	}

@@ -74,9 +74,9 @@ func NewSSV(cfg *config.Config, client *client.Eth1Client, store *store.Store, a
 
 func (s *SSV) Start() {
 	go s.ScanSSVEventLoop()
-	go s.updateClusterLiquidationLoop()
-	go s.updateOperatorLoop()
-	go s.updateClusterEoaOwnerLoop()
+	go s.UpdateClusterLiquidationLoop()
+	go s.UpdateOperatorLoop()
+	go s.UpdateClusterEoaOwnerLoop()
 }
 
 func (s *SSV) Stop() {
@@ -91,8 +91,10 @@ func (s *SSV) GetCfg() *config.Config {
 	return s.cfg
 }
 
+const safeBlockRange uint64 = 5
+
 func (s *SSV) ScanSSVEventLoop() {
-	ticker := time.NewTicker(24 * time.Second)
+	ticker := time.NewTicker(60 * time.Second)
 	for {
 		select {
 		case <-s.close:
@@ -103,10 +105,14 @@ func (s *SSV) ScanSSVEventLoop() {
 				ssvLog.Errorf("error getting block number: %s", err)
 				continue
 			}
+			toBlock := curBlock - safeBlockRange
+			if s.lastProcessedBlock+1 > toBlock {
+				continue
+			}
 
-			ssvLog.Infow("ScanSSVEventLoop", "lastProcessedBlock", s.lastProcessedBlock, "curBlock", curBlock)
+			ssvLog.Infow("ScanSSVEventLoop", "lastProcessedBlock", s.lastProcessedBlock, "toBlock", toBlock, "curBlock", curBlock)
 
-			lastProcessedBlock, err := s.ScanSSVEvent(s.lastProcessedBlock + 1)
+			lastProcessedBlock, err := s.ScanSSVEvent(s.lastProcessedBlock+1, toBlock)
 			if err != nil {
 				ssvLog.Errorf("ScanSSVEventLoop: ScanSSVEvent failed: %s", err)
 			}
@@ -120,8 +126,8 @@ func (s *SSV) ScanSSVEventLoop() {
 			}
 
 			if !s.isSynced.Load() {
-				if lastProcessedBlock >= curBlock {
-					ssvLog.Infow("ScanSSVEventLoop: Sync completed", "lastProcessedBlock", lastProcessedBlock, "curBlock", curBlock)
+				if lastProcessedBlock >= toBlock {
+					ssvLog.Infow("ScanSSVEventLoop: Sync completed", "lastProcessedBlock", lastProcessedBlock, "toBlock", toBlock)
 					s.isSynced.Store(true)
 				}
 			}
@@ -129,7 +135,7 @@ func (s *SSV) ScanSSVEventLoop() {
 	}
 }
 
-func (s *SSV) updateClusterLiquidationLoop() {
+func (s *SSV) UpdateClusterLiquidationLoop() {
 	var calcLiquidationQueue = map[string]Cluster{}
 	ticker := time.NewTicker(24 * time.Second)
 	for {
@@ -285,7 +291,7 @@ func (s *SSV) calcAndUpdateClusterLiquidation(cluster Cluster) error {
 	return nil
 }
 
-func (s *SSV) updateOperatorLoop() {
+func (s *SSV) UpdateOperatorLoop() {
 	ticker := time.NewTicker(8 * time.Hour)
 	for {
 		select {
@@ -376,7 +382,7 @@ func (s *SSV) updateOperatorName() {
 	}
 }
 
-func (s *SSV) updateClusterEoaOwnerLoop() {
+func (s *SSV) UpdateClusterEoaOwnerLoop() {
 	ticker := time.NewTicker(24 * time.Second)
 	for {
 		select {

@@ -17,16 +17,11 @@ import (
 	"time"
 )
 
-func (s *SSV) ScanSSVEvent(startBlock uint64) (uint64, error) {
-	curBlock, err := s.client.BlockNumber()
-	if err != nil {
-		return 0, err
-	}
-
+func (s *SSV) ScanSSVEvent(startBlock, endBlock uint64) (uint64, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	fetchLogs, fetchError := s.fetchEvents(ctx, startBlock, curBlock)
+	fetchLogs, fetchError := s.fetchEvents(ctx, startBlock, endBlock)
 
 	lastProcessedBlock, err := s.handleEvents(fetchLogs)
 	if err != nil {
@@ -37,7 +32,7 @@ func (s *SSV) ScanSSVEvent(startBlock uint64) (uint64, error) {
 		return lastProcessedBlock, err
 	}
 
-	return curBlock, nil
+	return endBlock, nil
 }
 
 type BlockLogs struct {
@@ -541,7 +536,7 @@ func (s *SSV) processBlockEvents(logs []ethtypes.Log) error {
 				return err
 			}
 
-			if err = s.store.RemoveValidator(hex.EncodeToString(pubKey), int64(vLog.BlockNumber)); err != nil {
+			if err = s.store.RemoveValidator(hex.EncodeToString(pubKey), clusterId, int64(vLog.BlockNumber)); err != nil {
 				return err
 			}
 

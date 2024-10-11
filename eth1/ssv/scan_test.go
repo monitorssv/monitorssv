@@ -1,7 +1,9 @@
 package ssv
 
 import (
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
+	"math/big"
 	"strings"
 	"testing"
 )
@@ -18,4 +20,19 @@ func TestOperatorMultipleWhitelistRemoved(t *testing.T) {
 		operatorInfoWhitelistedAddress = strings.Trim(operatorInfoWhitelistedAddress, ",")
 	}
 	t.Log("------", operatorInfoWhitelistedAddress)
+}
+
+func TestFilterLogs(t *testing.T) {
+	ssv := initSSV(t)
+	addresses := []common.Address{ssv.ssvNetworkAddr}
+
+	results, err := ssv.client.FilterLogs(ethereum.FilterQuery{
+		Addresses: addresses,
+		FromBlock: new(big.Int).SetUint64(20935314),
+		ToBlock:   new(big.Int).SetUint64(20935319),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(results)
 }

@@ -178,7 +178,7 @@ func (s *Store) GetValidators(page int, itemsPerPage int) ([]ValidatorInfo, int6
 		return nil, 0, err
 	}
 	var validators []ValidatorInfo
-	err = s.db.Model(&ValidatorInfo{}).Where("remove_block = 0").Order("id ASC").Offset(offset).Limit(perPage).Find(&validators).Error
+	err = s.db.Model(&ValidatorInfo{}).Where("remove_block = 0").Order("id DESC").Offset(offset).Limit(perPage).Find(&validators).Error
 	if err != nil {
 		return nil, 0, err
 	}
@@ -257,7 +257,7 @@ func (s *Store) GetValidatorByClusterId(page int, itemsPerPage int, clusterId st
 		return nil, 0, err
 	}
 	var validators []ValidatorInfo
-	err = s.db.Model(&ValidatorInfo{}).Where(&ValidatorInfo{ClusterID: clusterId}).Where("remove_block = 0").Order("exited_block DESC, id ASC").Offset(offset).Limit(perPage).Find(&validators).Error
+	err = s.db.Model(&ValidatorInfo{}).Where(&ValidatorInfo{ClusterID: clusterId}).Where("remove_block = 0").Order("exited_block DESC, id DESC").Offset(offset).Limit(perPage).Find(&validators).Error
 	if err != nil {
 		return nil, 0, err
 	}
@@ -286,7 +286,7 @@ func (s *Store) GetValidatorByOwner(page int, itemsPerPage int, owner string) ([
 		return nil, 0, err
 	}
 	var validators []ValidatorInfo
-	err = s.db.Model(&ValidatorInfo{}).Where(&ValidatorInfo{Owner: owner}).Where("remove_block = 0").Order("id ASC").Offset(offset).Limit(perPage).Find(&validators).Error
+	err = s.db.Model(&ValidatorInfo{}).Where(&ValidatorInfo{Owner: owner}).Where("remove_block = 0").Order("id DESC").Offset(offset).Limit(perPage).Find(&validators).Error
 	if err != nil {
 		return nil, 0, err
 	}
@@ -310,8 +310,8 @@ func (s *Store) UpdateValidatorStatus(publicKey string, status string) error {
 	return s.db.Model(&ValidatorInfo{}).Where(&ValidatorInfo{PublicKey: publicKey}).Where("remove_block = 0").Update("status", status).Error
 }
 
-func (s *Store) RemoveValidator(publicKey string, removeBlock int64) error {
-	return s.db.Model(&ValidatorInfo{}).Where(&ValidatorInfo{PublicKey: publicKey}).Where("remove_block = 0").Update("remove_block", removeBlock).Error
+func (s *Store) RemoveValidator(publicKey, clusterId string, removeBlock int64) error {
+	return s.db.Model(&ValidatorInfo{}).Where(&ValidatorInfo{PublicKey: publicKey, ClusterID: clusterId}).Update("remove_block", removeBlock).Error
 }
 
 func (s *Store) ExitValidator(publicKey string, exitBlock int64) error {

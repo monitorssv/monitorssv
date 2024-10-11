@@ -33,8 +33,6 @@ func main() {
 		Commands: []*cli.Command{
 			importCmd,
 			runCmd,
-			fixDBOperatorValidatorCountCmd,
-			fixDBClusterFeeAddressCmd,
 		},
 	}
 

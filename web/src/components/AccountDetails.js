@@ -56,12 +56,14 @@ const AccountDetails = ({ isDarkMode, network }) => {
             ]);
 
             // Set the active tab based on data availability
-            if (clustersData.clusters.length > 0) {
+            if (clustersData.clusters && clustersData.clusters.length > 0) {
                 setActiveTab('clusters');
-            } else if (operatorsData.operators.length > 0) {
+            } else if (operatorsData.operators && operatorsData.operators.length > 0) {
                 setActiveTab('operators');
-            } else if (eventsData.history.length > 0) {
+            } else if (eventsData.history && eventsData.history.length > 0) {
                 setActiveTab('history');
+            } else {
+                setActiveTab('clusters');
             }
         } catch (err) {
             console.error("Error fetching data:", err);

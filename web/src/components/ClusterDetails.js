@@ -87,12 +87,14 @@ const ClusterDetails = ({ isDarkMode, network }) => {
             ]);
 
             // Set the active tab based on data availability
-            if (validatorsData.validators.length > 0) {
+            if (validatorsData.validators && validatorsData.validators.length > 0) {
                 setActiveTab('validators');
-            } else if (blocksData.blocks.length > 0) {
+            } else if (blocksData.blocks && blocksData.blocks.length > 0) {
                 setActiveTab('blocks');
-            } else if (eventsData.history.length > 0) {
+            } else if (eventsData.history && eventsData.history.length > 0) {
                 setActiveTab('history');
+            } else {
+                setActiveTab('validators');
             }
         } catch (err) {
             console.error("Error fetching data:", err);
@@ -108,6 +110,7 @@ const ClusterDetails = ({ isDarkMode, network }) => {
                 throw new Error('Failed to fetch validators');
             }
             const data = await response.json();
+            console.log("Validators data:", data);
             setValidators(data.validators);
             setValidatorsTotalPages(data.totalPages);
             setValidatorsTotalItems(data.totalItems);

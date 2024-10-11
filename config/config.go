@@ -2,12 +2,9 @@ package config
 
 import (
 	"fmt"
-	logging "github.com/ipfs/go-log/v2"
 	"github.com/spf13/viper"
 	"path/filepath"
 )
-
-var log = logging.Logger("config")
 
 type Config struct {
 	Network   string       `json:"network"`
@@ -15,6 +12,7 @@ type Config struct {
 	Eth2Rpc   string       `json:"eth2rpc"`
 	Store     StoreSetting `json:"store"`
 	EtherScan EtherScan    `json:"etherscan"`
+	Dev       bool         `json:"dev"`
 }
 
 type StoreSetting struct {

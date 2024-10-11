@@ -71,6 +71,13 @@ func (bm *BeaconMonitor) Start() {
 		return
 	}
 
+	if bm.cfg.Dev {
+		log.Info("Beacon monitor does not run in dev mode")
+		return
+	}
+
+	log.Info("Beacon monitor is running")
+
 	go bm.ScanBeaconBlockLoop()
 	go bm.ValidatorMonitorLoop()
 }

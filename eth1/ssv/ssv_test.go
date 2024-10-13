@@ -122,3 +122,33 @@ func TestClusterOnChainBalance(t *testing.T) {
 		t.Log("-----------------------------")
 	}
 }
+
+func TestCalcLiquidation(t *testing.T) {
+	ssv := initSSV(t)
+	clusterInfo, err := ssv.store.GetClusterByClusterId("16dfca386ef47efc997613a23334f30d08178147813167fd0941468d9b1848aa")
+	if err != nil {
+		t.Fatal(err)
+	}
+	operatorIds, err := getOperatorIds(clusterInfo.OperatorIds)
+	if err != nil {
+		t.Fatal(err)
+	}
+	balance, isOk := big.NewInt(0).SetString(clusterInfo.Balance, 10)
+	if !isOk {
+		t.Fatal(err)
+	}
+
+	_, _, _, onChainBalance, err := ssv.CalcLiquidation(Cluster{
+		ClusterId:   clusterInfo.ClusterID,
+		Owner:       common.HexToAddress(clusterInfo.Owner),
+		OperatorIds: operatorIds,
+		ClusterInfo: ISSVNetworkCoreCluster{
+			ValidatorCount:  clusterInfo.ValidatorCount,
+			NetworkFeeIndex: clusterInfo.NetworkFeeIndex,
+			Index:           clusterInfo.Index,
+			Active:          clusterInfo.Active,
+			Balance:         balance,
+		},
+	})
+	t.Log(onChainBalance)
+}

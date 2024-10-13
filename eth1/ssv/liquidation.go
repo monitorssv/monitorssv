@@ -8,8 +8,8 @@ import (
 
 var (
 	noValidatorErr       = errors.New("no validators")
-	alreadyLiquidatedErr = errors.New("no validators")
-	canLiquidatedErr     = errors.New("no validators")
+	alreadyLiquidatedErr = errors.New("already liquidated")
+	canLiquidatedErr     = errors.New("can liquidate")
 )
 
 func (s *SSV) CalcLiquidation(cluster Cluster) (uint64, uint64, uint64, string, error) {

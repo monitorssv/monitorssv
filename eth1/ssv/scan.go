@@ -178,9 +178,9 @@ func (s *SSV) processBlockEvents(logs []ethtypes.Log) error {
 				}
 				account := data[0].(common.Address)
 				amount := data[1].(*big.Int)
-				err = s.store.UpdateClaimed(account.String(), amount)
+				err = s.store.AddClaimed(account.String(), amount)
 				if err != nil {
-					ssvLog.Errorw("processBlockEvents: SSVReward UpdateClaimed", "err", err)
+					ssvLog.Errorw("processBlockEvents: SSVReward AddClaimed", "err", err)
 				}
 			}
 			continue

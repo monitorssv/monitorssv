@@ -20,10 +20,18 @@ func TestCreateOrUpdateSSVReward(t *testing.T) {
 	}
 }
 
-func TestUpdateClaimed(t *testing.T) {
+func TestAddClaimed(t *testing.T) {
 	db := initDB(t)
-	err := db.UpdateClaimed("0x01f959146edf9e2b044e3a1a82dada5b7a3b756f", big.NewInt(10000000))
+	err := db.AddClaimed("0x01f959146edf9e2b044e3a1a82dada5b7a3b756f", big.NewInt(10000000))
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+func TestGetAllAccount(t *testing.T) {
+	db := initDB(t)
+	accounts, err := db.GetAllSSVRewardAccount()
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(accounts)
 }

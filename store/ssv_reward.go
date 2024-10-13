@@ -20,6 +20,28 @@ func (s *SSVReward) TableName() string {
 	return "ssv_rewards"
 }
 
+func (s *Store) GetMerkleRoot() (string, error) {
+	var reward SSVReward
+
+	result := s.db.First(&reward)
+	if result.Error != nil {
+		return "", result.Error
+	}
+
+	return reward.MerkleRoot, nil
+}
+
+func (s *Store) GetAllSSVRewardAccount() ([]string, error) {
+	var accounts []string
+	result := s.db.Model(&SSVReward{}).Pluck("Account", &accounts)
+
+	if result.Error != nil {
+		return nil, result.Error
+	}
+
+	return accounts, nil
+}
+
 func (s *Store) GetSSVReward(account string) SSVReward {
 	var reward SSVReward
 	// no reward return empty SSVReward
@@ -55,7 +77,7 @@ func (s *Store) CreateOrUpdateSSVReward(merkleRoot, account string, amountInt *b
 	return s.db.Save(&reward).Error
 }
 
-func (s *Store) UpdateClaimed(account string, amount *big.Int) error {
+func (s *Store) AddClaimed(account string, amount *big.Int) error {
 	var reward SSVReward
 	err := s.db.Model(&SSVReward{}).Where(&SSVReward{Account: account}).First(&reward).Error
 	if err != nil {
@@ -67,5 +89,20 @@ func (s *Store) UpdateClaimed(account string, amount *big.Int) error {
 	}
 
 	reward.Claimed = reward.Claimed.Add(decimal.NewFromBigInt(amount, 0))
+	return s.db.Save(&reward).Error
+}
+
+func (s *Store) UpdateClaimed(account string, amount *big.Int) error {
+	var reward SSVReward
+	err := s.db.Model(&SSVReward{}).Where(&SSVReward{Account: account}).First(&reward).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			reward.Account = account
+			reward.Claimed = decimal.NewFromBigInt(amount, 0)
+			return s.db.Create(&reward).Error
+		}
+	}
+
+	reward.Claimed = decimal.NewFromBigInt(amount, 0)
 	return s.db.Save(&reward).Error
 }

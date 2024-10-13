@@ -134,4 +134,5 @@ var (
 	ssvRewardClaimedTopic = common.HexToHash("0xd8138f8a3f377c5259ca548e70e4c2de94f129f5a11036a15b69513cba2b426a")
 	ssvRewardClaimEvent   = "Claimed"
 	getMerkleRootFunc     = "merkleRoot"
+	cumulativeClaimedFunc = "cumulativeClaimed"
 )

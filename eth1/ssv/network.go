@@ -3,6 +3,7 @@ package ssv
 import (
 	"encoding/hex"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/monitorssv/monitorssv/eth1/utils"
 	"math/big"
@@ -99,14 +100,45 @@ func (s *SSV) GetOperatorEarnings(operatorIds []uint64) ([]string, error) {
 	return operatorEarnings, nil
 }
 
-func GetSSVRewardMerkleRootOnChain(network string, client *ethclient.Client) (string, error) {
+func GetSSVRewardCumulativeClaimed(client *ethclient.Client, accounts []common.Address) ([]*big.Int, error) {
+	var callStructs = make([]utils.Struct0, 0)
+	for _, account := range accounts {
+		data, err := ssvRewardABI.Methods[cumulativeClaimedFunc].Inputs.Pack(account)
+		if err != nil {
+			return nil, err
+		}
+		callStructs = append(callStructs, utils.Struct0{
+			Target:   ssvRewardContractAddr,
+			CallData: append(ssvRewardABI.Methods[cumulativeClaimedFunc].ID, data...),
+		})
+	}
+
+	multiCall, err := utils.NewMulticall("mainnet", client)
+	if err != nil {
+		return nil, err
+	}
+
+	outs, err := multiCall.MulticallCaller.Aggregate(nil, callStructs)
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]*big.Int, 0)
+	for _, r := range outs[1].([][]uint8) {
+		results = append(results, big.NewInt(0).SetBytes(r))
+	}
+
+	return results, nil
+}
+
+func GetSSVRewardMerkleRootOnChain(client *ethclient.Client) (string, error) {
 	var callStructs = make([]utils.Struct0, 0)
 	callStructs = append(callStructs, utils.Struct0{
 		Target:   ssvRewardContractAddr,
 		CallData: ssvRewardABI.Methods[getMerkleRootFunc].ID,
 	})
 
-	multiCall, err := utils.NewMulticall(network, client)
+	multiCall, err := utils.NewMulticall("mainnet", client)
 	if err != nil {
 		return "", err
 	}

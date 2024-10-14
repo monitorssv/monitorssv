@@ -19,7 +19,7 @@ const mainnet = {
   name: 'Ethereum',
   currency: 'ETH',
   explorerUrl: 'https://etherscan.io',
-  rpcUrl: 'https://cloudflare-eth.com'
+  rpcUrl: 'https://ethereum.publicnode.com'
 }
 const holesky = {
   chainId: 17000,

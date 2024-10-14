@@ -236,7 +236,7 @@ const Claim = ({ isDarkMode }) => {
                                 Close
                             </button>
                             <a
-                                href={"https://etherscan.io"}
+                                href={`https://etherscan.io/tx/${txHash}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className={`px-4 py-2 rounded ${isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'}`}

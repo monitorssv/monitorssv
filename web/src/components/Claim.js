@@ -126,6 +126,13 @@ const Claim = ({ isDarkMode }) => {
         );
     };
 
+    const truncateHash = (hash) => {
+        if (typeof hash !== 'string' || hash.length < 58) {
+            return hash;
+        }
+        return `${hash.slice(0, 29)}...${hash.slice(-29)}`;
+    };
+
     const bgColor = isDarkMode ? 'bg-gray-900' : 'bg-gray-100';
     const textColor = isDarkMode ? 'text-white' : 'text-gray-800';
     const cardBgColor = isDarkMode ? 'bg-gray-800' : 'bg-white';
@@ -226,7 +233,7 @@ const Claim = ({ isDarkMode }) => {
                             Transaction has been sent. Transaction hash:
                         </p>
                         <p className={`mb-4 break-all ${isDarkMode ? 'text-blue-300' : 'text-blue-600'}`}>
-                            {txHash}
+                            {truncateHash(txHash)}
                         </p>
                         <div className="flex justify-between">
                             <button

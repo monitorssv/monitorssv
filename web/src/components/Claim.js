@@ -3,7 +3,7 @@ import { Search, Wallet, LogOut, CheckCircle, Loader } from 'lucide-react';
 import { useWeb3Modal } from '@web3modal/ethers/react';
 import { useWeb3ModalAccount } from '@web3modal/ethers/react';
 import { useWeb3ModalProvider } from '@web3modal/ethers/react';
-import { BrowserProvider, Contract, toBigInt } from 'ethers';
+import { JsonRpcProvider, BrowserProvider, Contract, toBigInt } from 'ethers';
 
 const Claim = ({ isDarkMode }) => {
     const [recipient, setRecipient] = useState('');
@@ -11,6 +11,7 @@ const Claim = ({ isDarkMode }) => {
     const [claimedRewards, setClaimedRewards] = useState(0);
     const [rewardsToClaim, setRewardsToClaim] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
+    const [isClaiming, setIsClaiming] = useState(false);
     const [txHash, setTxHash] = useState('');
     const [showTxModal, setShowTxModal] = useState(false);
     const [expectedMerkleRoot, setExpectedMerkleRoot] = useState('');
@@ -20,6 +21,9 @@ const Claim = ({ isDarkMode }) => {
     const { open } = useWeb3Modal();
     const { address, isConnected } = useWeb3ModalAccount();
     const { walletProvider } = useWeb3ModalProvider();
+
+    const contractAddress = '0xe16d6138B1D2aD4fD6603ACdb329ad1A6cD26D9f';
+    const abi = [{ "inputs": [{ "internalType": "address", "name": "token_", "type": "address" }], "stateMutability": "nonpayable", "type": "constructor" }, { "anonymous": false, "inputs": [{ "indexed": false, "internalType": "address", "name": "account", "type": "address" }, { "indexed": false, "internalType": "uint256", "name": "amount", "type": "uint256" }], "name": "Claimed", "type": "event" }, { "anonymous": false, "inputs": [{ "indexed": false, "internalType": "bytes32", "name": "oldMerkleRoot", "type": "bytes32" }, { "indexed": false, "internalType": "bytes32", "name": "newMerkleRoot", "type": "bytes32" }], "name": "MerkelRootUpdated", "type": "event" }, { "anonymous": false, "inputs": [{ "indexed": true, "internalType": "address", "name": "previousOwner", "type": "address" }, { "indexed": true, "internalType": "address", "name": "newOwner", "type": "address" }], "name": "OwnershipTransferred", "type": "event" }, { "inputs": [{ "internalType": "address", "name": "account", "type": "address" }, { "internalType": "uint256", "name": "cumulativeAmount", "type": "uint256" }, { "internalType": "bytes32", "name": "expectedMerkleRoot", "type": "bytes32" }, { "internalType": "bytes32[]", "name": "merkleProof", "type": "bytes32[]" }], "name": "claim", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [{ "internalType": "address", "name": "", "type": "address" }], "name": "cumulativeClaimed", "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "merkleRoot", "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "owner", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" }, { "inputs": [], "name": "renounceOwnership", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [{ "internalType": "bytes32", "name": "merkleRoot_", "type": "bytes32" }], "name": "setMerkleRoot", "outputs": [], "stateMutability": "nonpayable", "type": "function" }, { "inputs": [], "name": "token", "outputs": [{ "internalType": "address", "name": "", "type": "address" }], "stateMutability": "view", "type": "function" }, { "inputs": [{ "internalType": "address", "name": "newOwner", "type": "address" }], "name": "transferOwnership", "outputs": [], "stateMutability": "nonpayable", "type": "function" }];
 
     useEffect(() => {
         if (isConnected && address) {
@@ -33,6 +37,21 @@ const Claim = ({ isDarkMode }) => {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [recipient]);
+
+    const getClaimedFromContract = async (address) => {
+        setIsLoading(true);
+        setErrorMessage('');
+
+        try {
+            const provider = new JsonRpcProvider("https://ethereum.publicnode.com");
+            const contract = new Contract(contractAddress, abi, provider);
+            const claimed = await contract.cumulativeClaimed(address);
+            return claimed;
+        } catch (error) {
+            console.error("Failed to fetch claimed amount from contract:", error);
+            throw new Error('Failed to fetch claimed amount from contract');
+        }
+    };
 
     const handleSearch = async (e) => {
         if (e) e.preventDefault();
@@ -50,7 +69,9 @@ const Claim = ({ isDarkMode }) => {
 
             console.log("============", data);
             const cumulativeAmount = toBigInt(data.ssvRewardInfo.cumulativeAmount);
-            const claimed = toBigInt(data.ssvRewardInfo.claimed);
+            const claimed = await getClaimedFromContract(recipient);
+            console.log("======getClaimedFromContract======", claimed);
+
             const rewardsToClaim = cumulativeAmount - claimed;
 
             setEligibleRewards(cumulativeAmount);
@@ -69,15 +90,12 @@ const Claim = ({ isDarkMode }) => {
     const handleClaim = async () => {
         if (!walletProvider || !isConnected || rewardsToClaim <= 0) return;
 
-        setIsLoading(true);
+        setIsClaiming(true);
         setErrorMessage('');
 
         try {
             const ethersProvider = new BrowserProvider(walletProvider);
             const signer = await ethersProvider.getSigner();
-
-            const contractAddress = '0xe16d6138B1D2aD4fD6603ACdb329ad1A6cD26D9f';
-            const abi = [{ "inputs": [{ "internalType": "address", "name": "account", "type": "address" }, { "internalType": "uint256", "name": "cumulativeAmount", "type": "uint256" }, { "internalType": "bytes32", "name": "expectedMerkleRoot", "type": "bytes32" }, { "internalType": "bytes32[]", "name": "merkleProof", "type": "bytes32[]" }], "name": "claim", "outputs": [], "stateMutability": "nonpayable", "type": "function" }];
 
             const contract = new Contract(contractAddress, abi, signer);
             console.log("============", recipient);
@@ -97,7 +115,7 @@ const Claim = ({ isDarkMode }) => {
             await tx.wait();
             console.log("Transaction confirmed");
 
-            setClaimedRewards(prevClaimed => prevClaimed + rewardsToClaim);
+            setClaimedRewards(eligibleRewards);
             setRewardsToClaim(0);
         } catch (error) {
             console.error("Failed to claim rewards:", error);
@@ -216,11 +234,13 @@ const Claim = ({ isDarkMode }) => {
                     </div>
                 )}
 
-                {isLoading && (
+                {(isLoading || isClaiming) && (
                     <div className={`absolute inset-0 ${isDarkMode ? 'bg-black bg-opacity-50' : 'bg-white bg-opacity-70'} flex items-center justify-center z-10`}>
                         <div className={`${isDarkMode ? 'bg-white bg-opacity-20' : 'bg-gray-200 bg-opacity-90'} rounded-lg p-4 flex flex-col items-center`}>
                             <Loader className={`animate-spin ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} size={40} />
-                            <p className={`mt-2 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>Fetching reward ...</p>
+                            <p className={`mt-2 ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+                                {isClaiming ? 'Claiming reward...' : 'Fetching reward...'}
+                            </p>
                         </div>
                     </div>
                 )}

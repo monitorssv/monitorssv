@@ -289,6 +289,14 @@ const ClusterDetails = ({ isDarkMode, network }) => {
             : 'https://holesky.beaconcha.in';
         return `${baseUrl}/${type}/${value}`;
     };
+
+    const getSSVExploereUrl = (type, value) => {
+        const baseUrl = network === 'mainnet'
+            ? 'https://explorer.ssv.network'
+            : 'https://holesky.explorer.ssv.network';
+        return `${baseUrl}/${type}/${value}`;
+    };
+
     const renderDetailsSection = () => (
         <div className={`p-4 rounded-lg mb-6 space-y-1 ${isDarkMode ? 'bg-gray-800' : 'bg-gray-200'}`}>
             <div className="mb-1">
@@ -498,7 +506,7 @@ const ClusterDetails = ({ isDarkMode, network }) => {
                                     <td className={`p-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}>
                                         <PublicKeyDisplay
                                             publicKey={validator.publicKey}
-                                            beaconchainLink={getBeaconscanUrl('validator', `0x${validator.publicKey}`)}
+                                            beaconchainLink={getSSVExploereUrl('validators', `0x${validator.publicKey}`)}
                                             isDarkMode={isDarkMode}
                                             isTruncate={false}
                                         />

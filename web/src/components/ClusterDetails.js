@@ -471,7 +471,7 @@ const ClusterDetails = ({ isDarkMode, network }) => {
                         disabled={isTabDisabled(tab)}
                     >
                         {tab === 'validators' && `${validatorsTotalItems} Validators`}
-                        {tab === 'blocks' && `${blocksTotalItems} blocks`}
+                        {tab === 'blocks' && `${blocksTotalItems} Blocks`}
                         {tab === 'history' && `${eventsTotalItems} Account History`}
                     </button>
                 ))}

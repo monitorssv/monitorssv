@@ -23,7 +23,28 @@ const Dashboard = ({ isDarkMode, network }) => {
 
     useEffect(() => {
         fetchData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    const convertBlockToDate = (block) => {
+        const mainnetReferenceBlock = 17507487;
+        const mainnetReferenceDate = new Date('2023-06-18');
+        const holeskyReferenceBlock = 181612;
+        const holeskyReferenceDate = new Date('2023-10-25');
+
+        const blocksPerDay = 7200;
+
+        const referenceBlock = network === 'mainnet' ? mainnetReferenceBlock : holeskyReferenceBlock;
+        const referenceDate = network === 'mainnet' ? mainnetReferenceDate : holeskyReferenceDate;
+
+        const daysDiff = (block - referenceBlock) / blocksPerDay;
+        const date = new Date(referenceDate.getTime() + daysDiff * 24 * 60 * 60 * 1000);
+
+        const month = date.toLocaleString('en-US', { month: 'short' });
+        const year = date.getFullYear();
+
+        return `${month} ${year}`;
+    };
 
     const fetchData = async () => {
         setError(null);
@@ -34,6 +55,12 @@ const Dashboard = ({ isDarkMode, network }) => {
             }
 
             const jsonData = await response.json();
+            const updatedCharts = Array.isArray(jsonData.charts)
+                ? jsonData.charts.map(item => ({
+                    ...item,
+                    date: convertBlockToDate(parseInt(item.name))
+                }))
+                : [];
             setData({
                 activeOperators: jsonData.activeOperators,
                 activeValidators: jsonData.activeValidators,
@@ -47,7 +74,7 @@ const Dashboard = ({ isDarkMode, network }) => {
                 events: jsonData.events || [],
                 blocks: jsonData.blocks || [],
                 validators: jsonData.validators || [],
-                charts: jsonData.charts || []
+                charts: updatedCharts
             });
         } catch (error) {
             setError('Failed to fetch dashboard data. Please try again later.');
@@ -147,7 +174,7 @@ const Dashboard = ({ isDarkMode, network }) => {
                     <h2 className="text-xl mb-4">Validators</h2>
                     <ResponsiveContainer width="100%" height={200}>
                         <LineChart data={data.charts}>
-                            <XAxis dataKey="name" stroke={isDarkMode ? "#888" : "#333"} />
+                            <XAxis dataKey="date" stroke={isDarkMode ? "#888" : "#333"} />
                             <YAxis
                                 stroke={isDarkMode ? "#888" : "#333"}
                                 domain={[0, calculateYAxisMax(data.charts)]}
@@ -168,7 +195,7 @@ const Dashboard = ({ isDarkMode, network }) => {
                     <h2 className="text-xl mb-4">Operators</h2>
                     <ResponsiveContainer width="100%" height={200}>
                         <LineChart data={data.charts}>
-                            <XAxis dataKey="name" stroke={isDarkMode ? "#888" : "#333"} />
+                            <XAxis dataKey="date" stroke={isDarkMode ? "#888" : "#333"} />
                             <YAxis stroke={isDarkMode ? "#888" : "#333"} />
                             <Tooltip
                                 contentStyle={{

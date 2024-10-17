@@ -67,9 +67,6 @@ func (s *SSV) fetchEvents(ctx context.Context, startBlock, endBlock uint64) (<-c
 			}
 
 			addresses := []common.Address{s.ssvNetworkAddr}
-			if s.cfg.Network == "mainnet" { // only mainnet
-				addresses = append(addresses, ssvRewardContractAddr)
-			}
 
 			start := time.Now()
 			results, err := s.client.FilterLogs(ethereum.FilterQuery{
@@ -167,25 +164,6 @@ func (s *SSV) handleEvents(fetchLogs <-chan BlockLogs) (uint64, error) {
 
 func (s *SSV) processBlockEvents(logs []ethtypes.Log) error {
 	for _, vLog := range logs {
-		// SSV Network’s Incentive Program contract event
-		if vLog.Address == ssvRewardContractAddr {
-			if vLog.Topics[0] == ssvRewardClaimedTopic {
-				event := ssvRewardABI.Events[ssvRewardClaimEvent]
-				data, err := event.Inputs.Unpack(vLog.Data)
-				if err != nil {
-					ssvLog.Errorw("processBlockEvents: SSVReward Unpack", "err", err)
-					continue
-				}
-				account := data[0].(common.Address)
-				amount := data[1].(*big.Int)
-				err = s.store.AddClaimed(account.String(), amount)
-				if err != nil {
-					ssvLog.Errorw("processBlockEvents: SSVReward AddClaimed", "err", err)
-				}
-			}
-			continue
-		}
-
 		// ssv network event
 		event, ok := s.events[vLog.Topics[0]]
 		if !ok {

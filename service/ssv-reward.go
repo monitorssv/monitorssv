@@ -11,7 +11,6 @@ import (
 type SSVReward struct {
 	Account     string   `json:"account"`
 	Amount      string   `json:"cumulativeAmount"`
-	Claimed     string   `json:"claimed"`
 	MerkleRoot  string   `json:"expectedMerkleRoot"`
 	MerkleProof []string `json:"merkleProof"`
 }
@@ -30,7 +29,6 @@ func (ms *MonitorSSV) GetSSVReward(c *gin.Context) {
 	ssvRewardInfo := ms.store.GetSSVReward(owner)
 	ssvReward.Account = owner
 	ssvReward.Amount = ssvRewardInfo.Amount.String()
-	ssvReward.Claimed = ssvRewardInfo.Claimed.String()
 	ssvReward.MerkleRoot = ssvRewardInfo.MerkleRoot
 	ssvReward.MerkleProof = strings.Split(ssvRewardInfo.Proofs, ",")
 

@@ -12,6 +12,7 @@ const ClusterMonitor = ({ isDarkMode, network }) => {
     const [telegramAccessToken, setTelegramAccessToken] = useState('');
     const [telegramChatId, setTelegramChatId] = useState('');
     const [liquidationThresholdDays, setLiquidationThresholdDays] = useState(30);
+    const [tempLiquidationThreshold, setTempLiquidationThreshold] = useState('30');
     const [error, setError] = useState(null);
     const [msg, setMsg] = useState(null);
     const [block, setBlock] = useState(null);
@@ -390,8 +391,18 @@ const ClusterMonitor = ({ isDarkMode, network }) => {
                                 <input
                                     type="number"
                                     id="liquidationThresholdDays"
-                                    value={liquidationThresholdDays}
-                                    onChange={(e) => isConnected && isOwner && setLiquidationThresholdDays(Math.max(10, parseInt(e.target.value)))}
+                                    value={tempLiquidationThreshold}
+                                    onChange={(e) => {
+                                        if (isConnected && isOwner) {
+                                            setTempLiquidationThreshold(e.target.value);
+                                        }
+                                    }}
+                                    onBlur={() => {
+                                        const value = parseInt(tempLiquidationThreshold, 10);
+                                        const finalValue = isNaN(value) ? 10 : Math.max(10, value);
+                                        setLiquidationThresholdDays(finalValue);
+                                        setTempLiquidationThreshold(finalValue.toString());
+                                    }}
                                     className={`w-16 ${inputBgColor} rounded-lg px-2 py-1 text-center focus:outline-none focus:ring-2 focus:ring-blue-400`}
                                     min="10"
                                     disabled={!isConnected || !isOwner}

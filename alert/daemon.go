@@ -460,7 +460,7 @@ func (d *AlarmDaemon) proposeBlockAlarm(validatorProposeBlock ValidatorProposeBl
 	}
 
 	if ac != nil {
-		if !ac.ReportMissedBlock {
+		if !ac.ReportProposeBlock {
 			log.Infow("proposeBlockAlarm: ReportProposeBlock not set", "eoaOwner", ac.EoaOwner)
 			return
 		}
@@ -488,7 +488,7 @@ func (d *AlarmDaemon) missedBlockAlarm(validatorMissedBlock ValidatorMissedBlock
 	}
 
 	if ac != nil {
-		if !ac.ReportProposeBlock {
+		if !ac.ReportMissedBlock {
 			log.Infow("missedBlockAlarm: ReportProposeBlock not set", "eoaOwner", ac.EoaOwner)
 			return
 		}

@@ -58,12 +58,12 @@ const Validators = ({ isDarkMode, network }) => {
         setShouldFetch(true);
     }
 
-    // const getBeaconscanUrl = (type, value) => {
-    //     const baseUrl = network === 'mainnet'
-    //         ? 'https://beaconcha.in'
-    //         : 'https://holesky.beaconcha.in';
-    //     return `${baseUrl}/${type}/${value}`;
-    // };
+    const getBeaconscanUrl = (type, value) => {
+        const baseUrl = network === 'mainnet'
+            ? 'https://beaconcha.in'
+            : 'https://holesky.beaconcha.in';
+        return `${baseUrl}/${type}/${value}`;
+    };
 
     const getSSVExploereUrl = (type, value) => {
         const baseUrl = network === 'mainnet'
@@ -120,7 +120,8 @@ const Validators = ({ isDarkMode, network }) => {
                                 <td className={`p-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}>
                                     <PublicKeyDisplay
                                         publicKey={validator.publicKey}
-                                        beaconchainLink={getSSVExploereUrl('validators', `0x${validator.publicKey}`)}
+                                        beaconchainLink={getBeaconscanUrl('validator', `0x${validator.publicKey}`)}
+                                        explorerssvLink={getSSVExploereUrl('validators', `0x${validator.publicKey}`)}
                                         isDarkMode={isDarkMode}
                                         isTruncate={true}
                                     />

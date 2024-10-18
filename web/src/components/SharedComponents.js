@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Share2 } from 'lucide-react';
 
 export const StatusLabel = ({ status }) => (
     <span className={`
@@ -97,7 +97,7 @@ const truncate = (addr) => {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 };
 
-export const PublicKeyDisplay = ({ publicKey, beaconchainLink, isDarkMode, isTruncate }) => {
+export const PublicKeyDisplay = ({ publicKey, beaconchainLink, explorerssvLink, isDarkMode, isTruncate }) => {
     return (
         <div className="inline-flex items-center">
             <span className="mr-2">
@@ -112,6 +112,17 @@ export const PublicKeyDisplay = ({ publicKey, beaconchainLink, isDarkMode, isTru
                     title="View on Beaconcha.in"
                 >
                     <ExternalLink size={16} />
+                </a>
+            )}
+            {explorerssvLink && (
+                <a
+                    href={explorerssvLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`ml-2 ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}
+                    title="View on SSV Explorer"
+                >
+                    <Share2 size={16} />
                 </a>
             )}
         </div>

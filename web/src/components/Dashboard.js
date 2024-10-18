@@ -88,6 +88,13 @@ const Dashboard = ({ isDarkMode, network }) => {
         return `${baseUrl}/${type}/${value}`;
     };
 
+    const getSSVExploereUrl = (type, value) => {
+        const baseUrl = network === 'mainnet'
+            ? 'https://explorer.ssv.network'
+            : 'https://holesky.explorer.ssv.network';
+        return `${baseUrl}/${type}/${value}`;
+    };
+
     const getBeaconscanUrl = (type, value) => {
         const baseUrl = network === 'mainnet'
             ? 'https://beaconcha.in'
@@ -325,6 +332,7 @@ const Dashboard = ({ isDarkMode, network }) => {
                                                     <PublicKeyDisplay
                                                         publicKey={validator.publicKey}
                                                         beaconchainLink={getBeaconscanUrl('validator', `0x${validator.publicKey}`)}
+                                                        explorerssvLink={getSSVExploereUrl('validators', `0x${validator.publicKey}`)}
                                                         isDarkMode={isDarkMode}
                                                         isTruncate={true}
                                                     />

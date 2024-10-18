@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, NavLink, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { Sun, Moon, Award, Grid, Users, Hexagon, Shield, Menu, X, Bell } from 'lucide-react';
-import { FaGithub } from 'react-icons/fa';
+import { FaGithub, FaBook, FaHeart } from 'react-icons/fa';
 import { createWeb3Modal, defaultConfig, useWeb3ModalTheme } from '@web3modal/ethers/react'
 
 import Dashboard from './components/Dashboard';
@@ -212,6 +212,28 @@ function AppContent({ isDarkMode, toggleDarkMode, network, setNetwork, currentYe
           </div>
           <div className="flex items-center space-x-4">
             <a
+              href={`https://etherscan.io/address/0x250a20165f8488D3661BcA84CEBf40482a6fb23E`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`flex items-center transition-colors group relative ${isDarkMode ? 'text-gray-400 hover:text-indigo-400' : 'text-gray-600 hover:text-indigo-500'
+                }`}
+              title="Your help makes MonitorSSV better"
+            >
+              <span className="mr-2">Donations</span>
+              <FaHeart size={16} className="text-red-500" />
+            </a>
+            <a
+              href="https://docs.monitorssv.xyz/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`transition-colors ${isDarkMode
+                ? 'text-gray-400 hover:text-indigo-400'
+                : 'text-gray-600 hover:text-indigo-500'
+                }`}
+            >
+              <FaBook size={24} />
+            </a>
+            <a
               href="https://github.com/monitorssv"
               target="_blank"
               rel="noopener noreferrer"
@@ -222,6 +244,7 @@ function AppContent({ isDarkMode, toggleDarkMode, network, setNetwork, currentYe
             >
               <FaGithub size={24} />
             </a>
+
             <span className="text-sm">©{currentYear} Monitorssv</span>
           </div>
         </div>

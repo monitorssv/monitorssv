@@ -179,12 +179,13 @@ func (d *AlarmDaemon) liquidationAlarm() {
 				continue
 			}
 
-			log.Infow("liquidationAlarm: clusterInfo", "cluster", clusterInfo.ClusterID, "LiquidationBlock", clusterInfo.LiquidationBlock)
+			log.Infow("liquidationAlarm", "cluster", clusterInfo.ClusterID, "curBlock", curBlock, "LiquidationBlock", clusterInfo.LiquidationBlock, "ReportLiquidationThreshold", ac.ReportLiquidationThreshold)
 
 			if curBlock+ac.ReportLiquidationThreshold >= clusterInfo.LiquidationBlock {
 				onChainBalanceStr := store.CalcClusterOnChainBalance(curBlock, &clusterInfo)
-				liquidationMsgFormat := "MonitorSSV: Liquidation Warning!\n  Cluster: %s\n  Cluster Balance: %s ssv\n  Liquidation Block: %d\n  Operational Runway: %d"
+				liquidationMsgFormat := "MonitorSSV: Liquidation Warning!\n  Cluster: %s\n  Cluster Balance: %s ssv\n  Liquidation Block: %d\n  Operational Runway: %d days"
 				msg := fmt.Sprintf(liquidationMsgFormat, clusterInfo.ClusterID, onChainBalanceStr, clusterInfo.LiquidationBlock, (clusterInfo.LiquidationBlock-curBlock)/7200)
+				log.Infow("liquidationAlarm", "msg", msg)
 				err = alarm.Send(msg)
 				if err != nil {
 					log.Warnw("liquidationAlarm: Send", "msg", msg, "err", err)
@@ -242,6 +243,7 @@ func (d *AlarmDaemon) validatorExitedButNotRemovedAlarm() {
 			}
 			validatorNotRemovedMsgFormat := "MonitorSSV: Validator NotRemoved Warning!\n  Cluster: %s\n  Validators: %s"
 			msg := fmt.Sprintf(validatorNotRemovedMsgFormat, clusterInfo.ClusterID, indexs)
+			log.Infow("validatorExitedButNotRemovedAlarm", "msg", msg)
 			err = alarm.Send(msg)
 			if err != nil {
 				log.Warnw("validatorExitedButNotRemovedAlarm", "msg", msg, "err", err)
@@ -290,8 +292,9 @@ func (d *AlarmDaemon) weeklyReport() {
 			log.Infow("weeklyReport: clusterInfo", "cluster", clusterInfo.ClusterID, "LiquidationBlock", clusterInfo.LiquidationBlock)
 
 			onChainBalanceStr := store.CalcClusterOnChainBalance(curBlock, &clusterInfo)
-			weeklyReportMsgFormat := "MonitorSSV: Weekly Report!\n  Cluster: %s\n  Validator Count: %d\n  Cluster Balance: %s ssv\n  Liquidation Block: %d\n  Operational Runway: %d"
+			weeklyReportMsgFormat := "MonitorSSV: Weekly Report!\n  Cluster: %s\n  Validator Count: %d\n  Cluster Balance: %s ssv\n  Liquidation Block: %d\n  Operational Runway: %d days"
 			msg := fmt.Sprintf(weeklyReportMsgFormat, clusterInfo.ClusterID, clusterInfo.ValidatorCount, onChainBalanceStr, clusterInfo.LiquidationBlock, (clusterInfo.LiquidationBlock-curBlock)/7200)
+			log.Infow("weeklyReport", "msg", msg)
 			err = alarm.Send(msg)
 			if err != nil {
 				log.Warnw("weeklyReport: Send", "msg", msg, "err", err)
@@ -389,8 +392,9 @@ func (d *AlarmDaemon) operatorFeeChangeAlarm(operatorFeeChange OperatorFeeChange
 			}
 
 			onChainBalanceStr := store.CalcClusterOnChainBalance(curBlock, clusterInfo)
-			weeklyReportMsgFormat := "MonitorSSV: OperatorFee Change Notice!\n  Operator ID: %d\n  Operator Fee: %s\n  Cluster: %s\n  Validator Count: %d\n  Cluster Balance: %s ssv\n  Liquidation Block: %d\n  Operational Runway: %d"
+			weeklyReportMsgFormat := "MonitorSSV: OperatorFee Change Notice!\n  Operator ID: %d\n  Operator Fee: %s\n  Cluster: %s\n  Validator Count: %d\n  Cluster Balance: %s ssv\n  Liquidation Block: %d\n  Operational Runway: %d days"
 			msg := fmt.Sprintf(weeklyReportMsgFormat, operatorFeeChange.OperatorId, operatorFee, clusterInfo.ClusterID, clusterInfo.ValidatorCount, onChainBalanceStr, clusterInfo.LiquidationBlock, (clusterInfo.LiquidationBlock-curBlock)/7200)
+			log.Infow("operatorFeeChangeAlarm", "msg", msg)
 			err = alarm.Send(msg)
 			if err != nil {
 				log.Warnw("operatorFeeChangeAlarm: Send", "msg", msg, "err", err)
@@ -442,8 +446,9 @@ func (d *AlarmDaemon) networkFeeChangeAlarm(networkFeeChange NetworkFeeChangeNot
 			}
 
 			onChainBalanceStr := store.CalcClusterOnChainBalance(curBlock, &clusterInfo)
-			weeklyReportMsgFormat := "MonitorSSV: NetworkFee Change Notice!\n  Old Network Fee: %s\n  New Network Fee: %s\n  Cluster: %s\n  Validator Count: %d\n  Cluster Balance: %s ssv\n  Liquidation Block: %d\n  Operational Runway: %d"
+			weeklyReportMsgFormat := "MonitorSSV: NetworkFee Change Notice!\n  Old Network Fee: %s\n  New Network Fee: %s\n  Cluster: %s\n  Validator Count: %d\n  Cluster Balance: %s ssv\n  Liquidation Block: %d\n  Operational Runway: %d days"
 			msg := fmt.Sprintf(weeklyReportMsgFormat, oldNetworkFee, newNetworkFee, clusterInfo.ClusterID, clusterInfo.ValidatorCount, onChainBalanceStr, clusterInfo.LiquidationBlock, (clusterInfo.LiquidationBlock-curBlock)/7200)
+			log.Infow("networkFeeChangeAlarm", "msg", msg)
 			err = alarm.Send(msg)
 			if err != nil {
 				log.Warnw("networkFeeChangeAlarm: Send", "msg", msg, "err", err)
@@ -473,9 +478,10 @@ func (d *AlarmDaemon) proposeBlockAlarm(validatorProposeBlock ValidatorProposeBl
 
 		reportProposeBlockMsgFormat := "MonitorSSV: Validator propose block!\n  Cluster ID: %s\n  Validator Index: %d\n  Epoch: %d\n  Slot: %d\n"
 		msg := fmt.Sprintf(reportProposeBlockMsgFormat, validatorProposeBlock.ClusterId, validatorProposeBlock.Index, validatorProposeBlock.Epoch, validatorProposeBlock.Slot)
+		log.Infow("proposeBlockAlarm", "msg", msg)
 		err = alarm.Send(msg)
 		if err != nil {
-			log.Warnw("operatorFeeChangeAlarm: Send", "msg", msg, "err", err)
+			log.Warnw("proposeBlockAlarm: Send", "msg", msg, "err", err)
 		}
 	}
 }
@@ -501,6 +507,7 @@ func (d *AlarmDaemon) missedBlockAlarm(validatorMissedBlock ValidatorMissedBlock
 
 		reportMissedBlockMsgFormat := "MonitorSSV: Validator missed block!\n  Cluster ID: %s\n  Validator Index: %d\n  Epoch: %d\n  Slot: %d\n"
 		msg := fmt.Sprintf(reportMissedBlockMsgFormat, validatorMissedBlock.ClusterId, validatorMissedBlock.Index, validatorMissedBlock.Epoch, validatorMissedBlock.Slot)
+		log.Infow("missedBlockAlarm", "msg", msg)
 		err = alarm.Send(msg)
 		if err != nil {
 			log.Warnw("missedBlockAlarm: Send", "msg", msg, "err", err)
@@ -511,7 +518,7 @@ func (d *AlarmDaemon) missedBlockAlarm(validatorMissedBlock ValidatorMissedBlock
 func (d *AlarmDaemon) validatorBalanceDeltaAlarm(validatorBalanceDelta ValidatorBalanceDeltaNotify) {
 	ac, err := d.getClusterAlarmInfo(validatorBalanceDelta.ClusterId)
 	if err != nil {
-		log.Errorw("proposeBlockAlarm: getClusterAlarmInfo", "err", err)
+		log.Errorw("validatorBalanceDeltaAlarm: getClusterAlarmInfo", "err", err)
 		return
 	}
 
@@ -529,6 +536,7 @@ func (d *AlarmDaemon) validatorBalanceDeltaAlarm(validatorBalanceDelta Validator
 
 		reportBalanceDecreaseMsgFormat := "MonitorSSV: Validator balance decreases!\n  Cluster ID: %s\n  Epoch: %d\n  Validator Index: %v\n"
 		msg := fmt.Sprintf(reportBalanceDecreaseMsgFormat, validatorBalanceDelta.ClusterId, validatorBalanceDelta.Epoch, validatorBalanceDelta.Index)
+		log.Infow("validatorBalanceDeltaAlarm", "msg", msg)
 		err = alarm.Send(msg)
 		if err != nil {
 			log.Warnw("validatorBalanceDeltaAlarm: Send", "msg", msg, "err", err)
@@ -539,19 +547,20 @@ func (d *AlarmDaemon) validatorBalanceDeltaAlarm(validatorBalanceDelta Validator
 func (d *AlarmDaemon) validatorSlashAlarm(validatorSlashNotify ValidatorSlashNotify) {
 	ac, err := d.getClusterAlarmInfo(validatorSlashNotify.ClusterId)
 	if err != nil {
-		log.Errorw("proposeBlockAlarm: getClusterAlarmInfo", "err", err)
+		log.Errorw("validatorSlashAlarm: getClusterAlarmInfo", "err", err)
 		return
 	}
 
 	if ac != nil {
 		alarm, err := NewAlarm(ac.AlarmType, ac.AlarmChannel)
 		if err != nil {
-			log.Warnw("v: NewAlarm", "owner", ac.EoaOwner, "err", err)
+			log.Warnw("validatorSlashAlarm: NewAlarm", "owner", ac.EoaOwner, "err", err)
 			return
 		}
 
 		reportValidatorSlashMsgFormat := "MonitorSSV: Validator slashed!\n  Cluster ID: %s\n  Epoch: %d\n  Validator Index: %v\n"
 		msg := fmt.Sprintf(reportValidatorSlashMsgFormat, validatorSlashNotify.ClusterId, validatorSlashNotify.Epoch, validatorSlashNotify.Index)
+		log.Infow("validatorSlashAlarm", "msg", msg)
 		err = alarm.Send(msg)
 		if err != nil {
 			log.Warnw("validatorSlashAlarm: Send", "msg", msg, "err", err)

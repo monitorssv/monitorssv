@@ -535,11 +535,13 @@ func (d *AlarmDaemon) validatorBalanceDeltaAlarm(validatorBalanceDelta Validator
 		}
 
 		reportBalanceDecreaseMsgFormat := "MonitorSSV: Validator balance decreases!\n  Cluster ID: %s\n  Epoch: %d\n  Validator Index: %v\n"
-		msg := fmt.Sprintf(reportBalanceDecreaseMsgFormat, validatorBalanceDelta.ClusterId, validatorBalanceDelta.Epoch, validatorBalanceDelta.Index)
-		log.Infow("validatorBalanceDeltaAlarm", "msg", msg)
-		err = alarm.Send(msg)
-		if err != nil {
-			log.Warnw("validatorBalanceDeltaAlarm: Send", "msg", msg, "err", err)
+		for i, batch := range chunkSlice(validatorBalanceDelta.Index, 100) {
+			msg := fmt.Sprintf(reportBalanceDecreaseMsgFormat, validatorBalanceDelta.ClusterId, validatorBalanceDelta.Epoch, batch)
+			log.Infow("validatorBalanceDeltaAlarm", "batch", i, "msg", msg)
+			err = alarm.Send(msg)
+			if err != nil {
+				log.Warnw("validatorBalanceDeltaAlarm: Send", "msg", msg, "err", err)
+			}
 		}
 	}
 }
@@ -559,11 +561,13 @@ func (d *AlarmDaemon) validatorSlashAlarm(validatorSlashNotify ValidatorSlashNot
 		}
 
 		reportValidatorSlashMsgFormat := "MonitorSSV: Validator slashed!\n  Cluster ID: %s\n  Epoch: %d\n  Validator Index: %v\n"
-		msg := fmt.Sprintf(reportValidatorSlashMsgFormat, validatorSlashNotify.ClusterId, validatorSlashNotify.Epoch, validatorSlashNotify.Index)
-		log.Infow("validatorSlashAlarm", "msg", msg)
-		err = alarm.Send(msg)
-		if err != nil {
-			log.Warnw("validatorSlashAlarm: Send", "msg", msg, "err", err)
+		for i, batch := range chunkSlice(validatorSlashNotify.Index, 100) {
+			msg := fmt.Sprintf(reportValidatorSlashMsgFormat, validatorSlashNotify.ClusterId, validatorSlashNotify.Epoch, batch)
+			log.Infow("validatorSlashAlarm", "batch", i, "msg", msg)
+			err = alarm.Send(msg)
+			if err != nil {
+				log.Warnw("validatorSlashAlarm: Send", "msg", msg, "err", err)
+			}
 		}
 	}
 }
@@ -658,4 +662,25 @@ func decryptAlarmInfo(key []byte, alarmInfo *store.AlarmInfo) (*alarmConfig, err
 	ac.ReportWeekly = alarmInfo.ReportWeekly
 
 	return &ac, nil
+}
+
+func chunkSlice(slice []uint64, chunkSize int) [][]uint64 {
+	var chunks [][]uint64
+	if chunkSize <= 0 {
+		return [][]uint64{slice}
+	}
+
+	length := len(slice)
+	numChunks := (length + chunkSize - 1) / chunkSize
+
+	chunks = make([][]uint64, 0, numChunks)
+	for i := 0; i < length; i += chunkSize {
+		end := i + chunkSize
+		if end > length {
+			end = length
+		}
+		chunks = append(chunks, slice[i:end])
+	}
+
+	return chunks
 }

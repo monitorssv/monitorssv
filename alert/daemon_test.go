@@ -84,8 +84,8 @@ func TestValidatorBalanceDeltaAlarm(t *testing.T) {
 	alarmDaemon := initAlarm(t)
 	alarmDaemon.validatorBalanceDeltaAlarm(ValidatorBalanceDeltaNotify{
 		Epoch:     313246,
-		ClusterId: "df4e5f2a04ba6ea16eb721b577eac0edfb209389424d8d8217f81151ac80ac20",
-		Index:     []uint64{70812, 70813},
+		ClusterId: "5ef22a20d6c57cca7eca1f10853fd0d0c1c607ca5862f6fb1f078bcc9d90ba96",
+		Index:     generateIndexs(),
 	})
 }
 
@@ -93,7 +93,61 @@ func TestValidatorSlashAlarm(t *testing.T) {
 	alarmDaemon := initAlarm(t)
 	alarmDaemon.validatorSlashAlarm(ValidatorSlashNotify{
 		Epoch:     313246,
-		ClusterId: "df4e5f2a04ba6ea16eb721b577eac0edfb209389424d8d8217f81151ac80ac20",
-		Index:     []uint64{70812, 70813},
+		ClusterId: "5ef22a20d6c57cca7eca1f10853fd0d0c1c607ca5862f6fb1f078bcc9d90ba96",
+		Index:     generateIndexs(),
 	})
+}
+
+func generateIndexs() []uint64 {
+	start := uint64(249366)
+	count := 210
+
+	result := make([]uint64, count)
+	for i := 0; i < count; i++ {
+		result[i] = start + uint64(i)
+	}
+	return result
+}
+
+func TestChunkSlice(t *testing.T) {
+	testSlice := []uint64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21}
+	if len(chunkSlice(testSlice, 5)) != 5 {
+		t.Fatal("chunk slice error")
+	}
+	t.Log(chunkSlice(testSlice, 5))
+
+	if len(chunkSlice(testSlice, 2)) != 11 {
+		t.Fatal("chunk slice error")
+	}
+	t.Log(chunkSlice(testSlice, 2))
+
+	if len(chunkSlice(testSlice, 15)) != 2 {
+		t.Fatal("chunk slice error")
+	}
+	t.Log(chunkSlice(testSlice, 15))
+
+	if len(chunkSlice(testSlice, 10)) != 3 {
+		t.Fatal("chunk slice error")
+	}
+	t.Log(chunkSlice(testSlice, 10))
+
+	if len(chunkSlice(testSlice, 11)) != 2 {
+		t.Fatal("chunk slice error")
+	}
+	t.Log(chunkSlice(testSlice, 11))
+
+	if len(chunkSlice(testSlice, 20)) != 2 {
+		t.Fatal("chunk slice error")
+	}
+	t.Log(chunkSlice(testSlice, 20))
+
+	if len(chunkSlice(testSlice, 21)) != 1 {
+		t.Fatal("chunk slice error")
+	}
+	t.Log(chunkSlice(testSlice, 21))
+
+	if len(chunkSlice(testSlice, 0)) != 1 {
+		t.Fatal("chunk slice error")
+	}
+	t.Log(chunkSlice(testSlice, 0))
 }

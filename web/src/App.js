@@ -245,7 +245,7 @@ function AppContent({ isDarkMode, toggleDarkMode, network, setNetwork, currentYe
               <FaGithub size={24} />
             </a>
 
-            <span className="text-sm">©{currentYear} Monitorssv</span>
+            <span className="text-sm">©{currentYear} MonitorSSV</span>
           </div>
         </div>
       </footer>

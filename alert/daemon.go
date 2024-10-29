@@ -184,7 +184,8 @@ func (d *AlarmDaemon) liquidationAlarm() {
 			if curBlock+ac.ReportLiquidationThreshold >= clusterInfo.LiquidationBlock {
 				onChainBalanceStr := store.CalcClusterOnChainBalance(curBlock, &clusterInfo)
 				liquidationMsgFormat := "MonitorSSV: Liquidation Warning!\n  Cluster: %s\n  Cluster Balance: %s ssv\n  Liquidation Block: %d\n  Operational Runway: %d days"
-				msg := fmt.Sprintf(liquidationMsgFormat, clusterInfo.ClusterID, onChainBalanceStr, clusterInfo.LiquidationBlock, (clusterInfo.LiquidationBlock-curBlock)/7200)
+
+				msg := fmt.Sprintf(liquidationMsgFormat, clusterInfo.ClusterID, onChainBalanceStr, clusterInfo.LiquidationBlock, calcRunway(clusterInfo.LiquidationBlock, curBlock))
 				log.Infow("liquidationAlarm", "msg", msg)
 				err = alarm.Send(msg)
 				if err != nil {
@@ -293,7 +294,7 @@ func (d *AlarmDaemon) weeklyReport() {
 
 			onChainBalanceStr := store.CalcClusterOnChainBalance(curBlock, &clusterInfo)
 			weeklyReportMsgFormat := "MonitorSSV: Weekly Report!\n  Cluster: %s\n  Validator Count: %d\n  Cluster Balance: %s ssv\n  Liquidation Block: %d\n  Operational Runway: %d days"
-			msg := fmt.Sprintf(weeklyReportMsgFormat, clusterInfo.ClusterID, clusterInfo.ValidatorCount, onChainBalanceStr, clusterInfo.LiquidationBlock, (clusterInfo.LiquidationBlock-curBlock)/7200)
+			msg := fmt.Sprintf(weeklyReportMsgFormat, clusterInfo.ClusterID, clusterInfo.ValidatorCount, onChainBalanceStr, clusterInfo.LiquidationBlock, calcRunway(clusterInfo.LiquidationBlock, curBlock))
 			log.Infow("weeklyReport", "msg", msg)
 			err = alarm.Send(msg)
 			if err != nil {
@@ -393,7 +394,7 @@ func (d *AlarmDaemon) operatorFeeChangeAlarm(operatorFeeChange OperatorFeeChange
 
 			onChainBalanceStr := store.CalcClusterOnChainBalance(curBlock, clusterInfo)
 			weeklyReportMsgFormat := "MonitorSSV: OperatorFee Change Notice!\n  Operator ID: %d\n  Operator Fee: %s\n  Cluster: %s\n  Validator Count: %d\n  Cluster Balance: %s ssv\n  Liquidation Block: %d\n  Operational Runway: %d days"
-			msg := fmt.Sprintf(weeklyReportMsgFormat, operatorFeeChange.OperatorId, operatorFee, clusterInfo.ClusterID, clusterInfo.ValidatorCount, onChainBalanceStr, clusterInfo.LiquidationBlock, (clusterInfo.LiquidationBlock-curBlock)/7200)
+			msg := fmt.Sprintf(weeklyReportMsgFormat, operatorFeeChange.OperatorId, operatorFee, clusterInfo.ClusterID, clusterInfo.ValidatorCount, onChainBalanceStr, clusterInfo.LiquidationBlock, calcRunway(clusterInfo.LiquidationBlock, curBlock))
 			log.Infow("operatorFeeChangeAlarm", "msg", msg)
 			err = alarm.Send(msg)
 			if err != nil {
@@ -447,7 +448,7 @@ func (d *AlarmDaemon) networkFeeChangeAlarm(networkFeeChange NetworkFeeChangeNot
 
 			onChainBalanceStr := store.CalcClusterOnChainBalance(curBlock, &clusterInfo)
 			weeklyReportMsgFormat := "MonitorSSV: NetworkFee Change Notice!\n  Old Network Fee: %s\n  New Network Fee: %s\n  Cluster: %s\n  Validator Count: %d\n  Cluster Balance: %s ssv\n  Liquidation Block: %d\n  Operational Runway: %d days"
-			msg := fmt.Sprintf(weeklyReportMsgFormat, oldNetworkFee, newNetworkFee, clusterInfo.ClusterID, clusterInfo.ValidatorCount, onChainBalanceStr, clusterInfo.LiquidationBlock, (clusterInfo.LiquidationBlock-curBlock)/7200)
+			msg := fmt.Sprintf(weeklyReportMsgFormat, oldNetworkFee, newNetworkFee, clusterInfo.ClusterID, clusterInfo.ValidatorCount, onChainBalanceStr, clusterInfo.LiquidationBlock, calcRunway(clusterInfo.LiquidationBlock, curBlock))
 			log.Infow("networkFeeChangeAlarm", "msg", msg)
 			err = alarm.Send(msg)
 			if err != nil {
@@ -683,4 +684,12 @@ func chunkSlice(slice []uint64, chunkSize int) [][]uint64 {
 	}
 
 	return chunks
+}
+
+func calcRunway(liquidationBlock, curBlock uint64) uint64 {
+	runway := uint64(0)
+	if liquidationBlock > curBlock {
+		runway = (liquidationBlock - curBlock) / 7200
+	}
+	return runway
 }

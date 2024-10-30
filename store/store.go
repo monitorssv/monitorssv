@@ -87,6 +87,11 @@ type ChartData struct {
 	Operators  int    `json:"operators"`
 }
 
+type CumulativeValue struct {
+	block int64
+	total int
+}
+
 func (s *Store) CalculateChartData() ([]ChartData, error) {
 	validatorChanges, err := s.getValidatorChanges()
 	if err != nil {
@@ -101,39 +106,69 @@ func (s *Store) CalculateChartData() ([]ChartData, error) {
 		return nil, errors.New("no validators or operators found")
 	}
 
-	allChanges := append(validatorChanges, operatorChanges...)
-	sort.Slice(allChanges, func(i, j int) bool {
-		return allChanges[i].Block < allChanges[j].Block
-	})
+	minBlock := validatorChanges[0].Block
+	maxBlock := validatorChanges[len(validatorChanges)-1].Block
 
-	minBlock := allChanges[0].Block
-	maxBlock := allChanges[len(allChanges)-1].Block
+	if len(operatorChanges) > 0 {
+		if operatorChanges[0].Block < minBlock {
+			minBlock = operatorChanges[0].Block
+		}
+		if operatorChanges[len(operatorChanges)-1].Block > maxBlock {
+			maxBlock = operatorChanges[len(operatorChanges)-1].Block
+		}
+	}
 
 	interval := (maxBlock - minBlock) / 11
-	var chartData []ChartData
-	totalValidators, totalOperators := 0, 0
-	validatorIndex, operatorIndex := 0, 0
 
+	var timePoints []int64
 	for i := int64(0); i <= 11; i++ {
-		targetBlock := minBlock + i*interval
 		if i == 11 {
-			targetBlock = maxBlock
+			timePoints = append(timePoints, maxBlock)
+		} else {
+			timePoints = append(timePoints, minBlock+i*interval)
+		}
+	}
+
+	validatorCumulative := make([]CumulativeValue, 0, len(validatorChanges))
+	total := 0
+	for _, change := range validatorChanges {
+		total += change.Change
+		validatorCumulative = append(validatorCumulative, CumulativeValue{
+			block: change.Block,
+			total: total,
+		})
+	}
+
+	operatorCumulative := make([]CumulativeValue, 0, len(operatorChanges))
+	total = 0
+	for _, change := range operatorChanges {
+		total += change.Change
+		operatorCumulative = append(operatorCumulative, CumulativeValue{
+			block: change.Block,
+			total: total,
+		})
+	}
+
+	var chartData []ChartData
+	for _, timePoint := range timePoints {
+		validatorTotal := 0
+		if idx := sort.Search(len(validatorCumulative), func(i int) bool {
+			return validatorCumulative[i].block > timePoint
+		}); idx > 0 {
+			validatorTotal = validatorCumulative[idx-1].total
 		}
 
-		for validatorIndex < len(validatorChanges) && validatorChanges[validatorIndex].Block <= targetBlock {
-			totalValidators += validatorChanges[validatorIndex].Change
-			validatorIndex++
-		}
-
-		for operatorIndex < len(operatorChanges) && operatorChanges[operatorIndex].Block <= targetBlock {
-			totalOperators += operatorChanges[operatorIndex].Change
-			operatorIndex++
+		operatorTotal := 0
+		if idx := sort.Search(len(operatorCumulative), func(i int) bool {
+			return operatorCumulative[i].block > timePoint
+		}); idx > 0 {
+			operatorTotal = operatorCumulative[idx-1].total
 		}
 
 		chartData = append(chartData, ChartData{
-			Name:       fmt.Sprintf("%d", targetBlock),
-			Validators: totalValidators,
-			Operators:  totalOperators,
+			Name:       fmt.Sprintf("%d", timePoint),
+			Validators: validatorTotal,
+			Operators:  operatorTotal,
 		})
 	}
 

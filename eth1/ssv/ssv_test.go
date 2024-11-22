@@ -158,3 +158,39 @@ func TestCalcLiquidation(t *testing.T) {
 	t.Log(burnFee)
 	t.Log(onChainBalance)
 }
+
+func TestCalcLiquidation2(t *testing.T) {
+	ssv := initSSV(t)
+	clusterInfo, err := ssv.store.GetClusterByClusterId("dd03b44a59f87882c088132f12743cc01274bc89cf51324b23bc3e6375094b11")
+	if err != nil {
+		t.Fatal(err)
+	}
+	operatorIds, err := getOperatorIds(clusterInfo.OperatorIds)
+	if err != nil {
+		t.Fatal(err)
+	}
+	balance, isOk := big.NewInt(0).SetString(clusterInfo.Balance, 10)
+	if !isOk {
+		t.Fatal(err)
+	}
+	cluster := Cluster{
+		ClusterId:   clusterInfo.ClusterID,
+		Owner:       common.HexToAddress(clusterInfo.Owner),
+		OperatorIds: operatorIds,
+		ClusterInfo: ISSVNetworkCoreCluster{
+			ValidatorCount:  clusterInfo.ValidatorCount,
+			NetworkFeeIndex: clusterInfo.NetworkFeeIndex,
+			Index:           clusterInfo.Index,
+			Active:          clusterInfo.Active,
+			Balance:         balance,
+		},
+	}
+	t.Log(cluster)
+	liquidationBlock, curBlock, burnFee, onChainBalance, err := ssv.CalcLiquidation(cluster)
+	t.Log(liquidationBlock)
+	t.Log(curBlock)
+	t.Log(liquidationBlock - curBlock)
+	t.Log((liquidationBlock - curBlock) / 7200)
+	t.Log(burnFee)
+	t.Log(onChainBalance)
+}

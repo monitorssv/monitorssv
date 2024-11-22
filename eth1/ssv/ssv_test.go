@@ -125,7 +125,7 @@ func TestClusterOnChainBalance(t *testing.T) {
 
 func TestCalcLiquidation(t *testing.T) {
 	ssv := initSSV(t)
-	clusterInfo, err := ssv.store.GetClusterByClusterId("16dfca386ef47efc997613a23334f30d08178147813167fd0941468d9b1848aa")
+	clusterInfo, err := ssv.store.GetClusterByClusterId("61bb7fdc5b3ccc9ae6573bdaf86fbc26e0681f42b1b513b56325f5f0a63f2b49")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,8 +137,7 @@ func TestCalcLiquidation(t *testing.T) {
 	if !isOk {
 		t.Fatal(err)
 	}
-
-	_, _, _, onChainBalance, err := ssv.CalcLiquidation(Cluster{
+	cluster := Cluster{
 		ClusterId:   clusterInfo.ClusterID,
 		Owner:       common.HexToAddress(clusterInfo.Owner),
 		OperatorIds: operatorIds,
@@ -149,6 +148,13 @@ func TestCalcLiquidation(t *testing.T) {
 			Active:          clusterInfo.Active,
 			Balance:         balance,
 		},
-	})
+	}
+	t.Log(cluster)
+	liquidationBlock, curBlock, burnFee, onChainBalance, err := ssv.CalcLiquidation(cluster)
+	t.Log(liquidationBlock)
+	t.Log(curBlock)
+	t.Log(liquidationBlock - curBlock)
+	t.Log((liquidationBlock - curBlock) / 7200)
+	t.Log(burnFee)
 	t.Log(onChainBalance)
 }

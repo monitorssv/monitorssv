@@ -48,7 +48,7 @@ func (s *SSV) CalcLiquidation(cluster Cluster) (uint64, uint64, uint64, string, 
 	liquidationThreshold := big.NewInt(0).Mul(perLiquidationThreshold, big.NewInt(int64(cluster.ClusterInfo.ValidatorCount)))
 
 	if liquidationInfo.ClusterBalance.Cmp(liquidationThreshold) > 0 {
-		activeBalance := big.NewInt(0).Sub(liquidationInfo.ClusterBalance, liquidationThreshold)
+		activeBalance := big.NewInt(0).Sub(liquidationInfo.ClusterBalance, liquidationInfo.MinimumLiquidationCollateral)
 
 		preValidatorBalance := big.NewInt(0).Div(activeBalance, big.NewInt(int64(cluster.ClusterInfo.ValidatorCount)))
 		if preValidatorBalance.Uint64() == 0 {

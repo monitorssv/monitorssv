@@ -126,7 +126,7 @@ func (s *Store) GetActiveButExitedValidatorCount(clusterId string) (int64, error
 
 func (s *Store) GetValidatorByPublicKey(publicKey string) (*ValidatorInfo, error) {
 	var validator ValidatorInfo
-	err := s.db.Model(&ValidatorInfo{}).Where(&ValidatorInfo{PublicKey: publicKey}).First(&validator).Error
+	err := s.db.Model(&ValidatorInfo{}).Where(&ValidatorInfo{PublicKey: publicKey}).Where("remove_block = 0").First(&validator).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, nil
 	}

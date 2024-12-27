@@ -17,7 +17,7 @@ const Claim = ({ isDarkMode }) => {
     const [expectedMerkleRoot, setExpectedMerkleRoot] = useState('');
     const [merkleProof, setMerkleProof] = useState([]);
     const [errorMessage, setErrorMessage] = useState('');
-
+    const [safeTransactionStatus, setSafeTransactionStatus] = useState(null);
     const { open } = useWeb3Modal();
     const { address, isConnected } = useWeb3ModalAccount();
     const { walletProvider } = useWeb3ModalProvider();
@@ -69,8 +69,11 @@ const Claim = ({ isDarkMode }) => {
 
             console.log("============", data);
             const cumulativeAmount = toBigInt(data.ssvRewardInfo.cumulativeAmount);
-            const claimed = await getClaimedFromContract(recipient);
-            console.log("======getClaimedFromContract======", claimed);
+            let claimed = 0n;
+            if (cumulativeAmount !== 0n) {
+                claimed = await getClaimedFromContract(recipient);
+                console.log("======getClaimedFromContract======", claimed);
+            }
 
             const rewardsToClaim = cumulativeAmount - claimed;
 
@@ -102,6 +105,7 @@ const Claim = ({ isDarkMode }) => {
             console.log("============", eligibleRewards);
             console.log("============", expectedMerkleRoot);
             console.log("============", merkleProof);
+            const isSafe = await checkIsSafeWallet(signer.address);
             const tx = await contract.claim(
                 recipient,
                 eligibleRewards,
@@ -110,24 +114,39 @@ const Claim = ({ isDarkMode }) => {
             );
 
             setTxHash(tx.hash);
+
+            if (isSafe) {
+                setSafeTransactionStatus({
+                    status: 'pending',
+                    message: 'Transaction proposed. Waiting for confirmations...',
+                    link: `https://app.safe.global/transactions/queue?safe=eth:${recipient}`
+                });
+            } else {
+                await tx.wait();
+                console.log("Transaction confirmed");
+                setClaimedRewards(eligibleRewards);
+                setRewardsToClaim(0);
+            }
+
             setShowTxModal(true);
-
-            await tx.wait();
-            console.log("Transaction confirmed");
-
-            setClaimedRewards(eligibleRewards);
-            setRewardsToClaim(0);
         } catch (error) {
             console.error("Failed to claim rewards:", error);
             setErrorMessage(error.message || 'Failed to claim rewards. Please try again.');
         }
         finally {
-            setIsLoading(false);
+            setIsClaiming(false);
         }
     };
 
-    const closeModal = () => {
-        setShowTxModal(false);
+    const checkIsSafeWallet = async (address) => {
+        try {
+            const provider = new JsonRpcProvider("https://ethereum.publicnode.com");
+            const safeCode = await provider.getCode(address);
+            return safeCode !== '0x';
+        } catch (error) {
+            console.error("Error checking Safe wallet:", error);
+            return false;
+        }
     };
 
     const ErrorMessage = ({ errorMessage }) => {
@@ -144,11 +163,18 @@ const Claim = ({ isDarkMode }) => {
         );
     };
 
+    const truncateSafeLink = (hash) => {
+        if (typeof hash !== 'string') {
+            return hash;
+        }
+        return `${hash.slice(0, 60)}...${hash.slice(-7)}`;
+    };
+
     const truncateHash = (hash) => {
         if (typeof hash !== 'string' || hash.length < 58) {
             return hash;
         }
-        return `${hash.slice(0, 29)}...${hash.slice(-29)}`;
+        return `${hash.slice(0, 28)}...${hash.slice(-29)}`;
     };
 
     const bgColor = isDarkMode ? 'bg-gray-900' : 'bg-gray-100';
@@ -156,6 +182,74 @@ const Claim = ({ isDarkMode }) => {
     const cardBgColor = isDarkMode ? 'bg-gray-800' : 'bg-white';
     const inputBgColor = isDarkMode ? 'bg-gray-700' : 'bg-gray-200';
     const buttonBgColor = isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600';
+
+    const TransactionModal = ({ txHash, safeTransactionStatus, isDarkMode, closeModal }) => {
+        if (safeTransactionStatus) {
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                    <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg shadow-xl`}>
+                        <h3 className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                            Transaction Proposed
+                        </h3>
+                        <p className={`mb-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                            Transaction has been proposed and waiting for confirmations
+                        </p>
+                        <p className={`mb-4 break-all ${isDarkMode ? 'text-blue-300' : 'text-blue-600'}`}>
+                            {truncateSafeLink(safeTransactionStatus.link)}
+                        </p>
+                        <div className="flex justify-between">
+                            <button
+                                onClick={closeModal}
+                                className={`px-4 py-2 rounded ${isDarkMode ? 'bg-gray-600 text-white' : 'bg-gray-200 text-black'}`}
+                            >
+                                Close
+                            </button>
+                            <a
+                                href={safeTransactionStatus.link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`px-4 py-2 rounded ${isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'}`}
+                            >
+                                View in Safe Wallet
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        return (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg shadow-xl`}>
+                    <h3 className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-black'}`}>
+                        Transaction Sent
+                    </h3>
+                    <p className={`mb-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                        Transaction has been sent. Transaction hash:
+                    </p>
+                    <p className={`mb-4 break-all ${isDarkMode ? 'text-blue-300' : 'text-blue-600'}`}>
+                        {truncateHash(txHash)}
+                    </p>
+                    <div className="flex justify-between">
+                        <button
+                            onClick={closeModal}
+                            className={`px-4 py-2 rounded ${isDarkMode ? 'bg-gray-600 text-white' : 'bg-gray-200 text-black'}`}
+                        >
+                            Close
+                        </button>
+                        <a
+                            href={`https://etherscan.io/tx/${txHash}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`px-4 py-2 rounded ${isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'}`}
+                        >
+                            View on Etherscan
+                        </a>
+                    </div>
+                </div>
+            </div>
+        );
+    };
 
     return (
         <div className={`p-8 ${bgColor} ${textColor} bg-gradient-to-br flex items-center justify-center`}>
@@ -246,33 +340,12 @@ const Claim = ({ isDarkMode }) => {
                 )}
             </div>
             {showTxModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-                    <div className={`${isDarkMode ? 'bg-gray-800' : 'bg-white'} p-6 rounded-lg shadow-xl`}>
-                        <h3 className={`text-xl font-bold mb-4 ${isDarkMode ? 'text-white' : 'text-black'}`}>Transaction Sent</h3>
-                        <p className={`mb-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                            Transaction has been sent. Transaction hash:
-                        </p>
-                        <p className={`mb-4 break-all ${isDarkMode ? 'text-blue-300' : 'text-blue-600'}`}>
-                            {truncateHash(txHash)}
-                        </p>
-                        <div className="flex justify-between">
-                            <button
-                                onClick={closeModal}
-                                className={`px-4 py-2 rounded ${isDarkMode ? 'bg-gray-600 text-white' : 'bg-gray-200 text-black'}`}
-                            >
-                                Close
-                            </button>
-                            <a
-                                href={`https://etherscan.io/tx/${txHash}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className={`px-4 py-2 rounded ${isDarkMode ? 'bg-blue-600 text-white' : 'bg-blue-500 text-white'}`}
-                            >
-                                View on Etherscan
-                            </a>
-                        </div>
-                    </div>
-                </div>
+                <TransactionModal
+                    txHash={txHash}
+                    safeTransactionStatus={safeTransactionStatus}
+                    isDarkMode={isDarkMode}
+                    closeModal={() => setShowTxModal(false)}
+                />
             )}
         </div>
     );

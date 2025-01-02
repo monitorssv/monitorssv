@@ -542,5 +542,18 @@ func (c *Client) get(url string) ([]byte, error) {
 		return nil, fmt.Errorf("url: %v, error-response: %s", url, data)
 	}
 
+	// enhanced compatibility
+	var apiRes APIResponse
+	if err := json.Unmarshal(data, &apiRes); err == nil {
+		if apiRes.Code == 404 {
+			return nil, ErrNotFound
+		}
+	}
+
 	return data, err
+}
+
+type APIResponse struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
 }

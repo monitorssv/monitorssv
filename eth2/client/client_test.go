@@ -9,7 +9,7 @@ import (
 
 func initClient(t *testing.T) *Client {
 	_ = logging.SetLogLevel("*", "INFO")
-	cfg, err := config.InitConfig("../../deploy/monitorssv_holesky/config.yaml")
+	cfg, err := config.InitConfig("../../deploy/monitorssv/config.yaml")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -37,13 +37,17 @@ func TestClient(t *testing.T) {
 
 func TestGetHeader(t *testing.T) {
 	client := initClient(t)
-	_, err := client.GetSlotHeader(9848730)
-	if !errors.Is(err, ErrNotFound) {
-		t.Fatal(err)
-	}
-	_, err = client.GetBlockBySlot(9848730)
-	if !errors.Is(err, ErrNotFound) {
-		t.Fatal(err)
+	for i := 0; i < 20; i++ {
+		_, err := client.GetSlotHeader(10726944)
+		if !errors.Is(err, ErrNotFound) {
+			t.Fatal(err)
+		}
+		t.Log(err.Error())
+		_, err = client.GetBlockBySlot(10726944)
+		t.Log(err.Error())
+		if !errors.Is(err, ErrNotFound) {
+			t.Fatal(err)
+		}
 	}
 }
 

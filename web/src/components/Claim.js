@@ -106,6 +106,35 @@ const Claim = ({ isDarkMode }) => {
             console.log("============", expectedMerkleRoot);
             console.log("============", merkleProof);
             const isSafe = await checkIsSafeWallet(signer.address);
+            console.log("is Safe wallet", isSafe);
+
+            if (isSafe) {
+                contract.claim(
+                    recipient,
+                    eligibleRewards,
+                    expectedMerkleRoot,
+                    merkleProof
+                ).catch(error => {
+                    console.error("Failed to claim rewards:", error);
+                    setErrorMessage(error.message || 'Failed to claim rewards. Please try again.');
+                    setShowTxModal(false);
+                });
+
+                console.log("propose safe transaction");
+
+                await new Promise(resolve => setTimeout(resolve, 5000));
+
+                setSafeTransactionStatus({
+                    status: 'pending',
+                    message: 'Transaction proposal created. Please sign it in Safe Wallet!',
+                    link: `https://app.safe.global/transactions/queue?safe=eth:${recipient}`
+                });
+
+                setShowTxModal(true);
+                setIsClaiming(false);
+                return;
+            }
+
             const tx = await contract.claim(
                 recipient,
                 eligibleRewards,
@@ -114,20 +143,10 @@ const Claim = ({ isDarkMode }) => {
             );
 
             setTxHash(tx.hash);
-
-            if (isSafe) {
-                setSafeTransactionStatus({
-                    status: 'pending',
-                    message: 'Transaction proposed. Waiting for confirmations...',
-                    link: `https://app.safe.global/transactions/queue?safe=eth:${recipient}`
-                });
-            } else {
-                await tx.wait();
-                console.log("Transaction confirmed");
-                setClaimedRewards(eligibleRewards);
-                setRewardsToClaim(0);
-            }
-
+            await tx.wait();
+            console.log("Transaction confirmed");
+            setClaimedRewards(eligibleRewards);
+            setRewardsToClaim(0);
             setShowTxModal(true);
         } catch (error) {
             console.error("Failed to claim rewards:", error);
@@ -184,6 +203,8 @@ const Claim = ({ isDarkMode }) => {
     const buttonBgColor = isDarkMode ? 'bg-blue-600 hover:bg-blue-700' : 'bg-blue-500 hover:bg-blue-600';
 
     const TransactionModal = ({ txHash, safeTransactionStatus, isDarkMode, closeModal }) => {
+        console.log('Modal rendered with:', { txHash, safeTransactionStatus });
+
         if (safeTransactionStatus) {
             return (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
@@ -192,7 +213,7 @@ const Claim = ({ isDarkMode }) => {
                             Transaction Proposed
                         </h3>
                         <p className={`mb-4 ${isDarkMode ? 'text-gray-300' : 'text-gray-600'}`}>
-                            Transaction has been proposed and waiting for confirmations
+                            {safeTransactionStatus.message}
                         </p>
                         <p className={`mb-4 break-all ${isDarkMode ? 'text-blue-300' : 'text-blue-600'}`}>
                             {truncateSafeLink(safeTransactionStatus.link)}

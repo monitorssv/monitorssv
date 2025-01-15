@@ -115,7 +115,7 @@ const Claim = ({ isDarkMode }) => {
                     eligibleRewards,
                     expectedMerkleRoot,
                     merkleProof
-                ).catch(error => {
+                ).catch(error => { // err
                     console.error("Failed to claim rewards:", error);
                     setErrorMessage(error.message || 'Failed to claim rewards. Please try again.');
                     setShowTxModal(false);
@@ -123,7 +123,8 @@ const Claim = ({ isDarkMode }) => {
 
                 console.log("propose safe transaction");
 
-                await new Promise(resolve => setTimeout(resolve, 5000));
+                // Wait, try to catch err
+                await new Promise(resolve => setTimeout(resolve, 8000));
 
                 setSafeTransactionStatus({
                     status: 'pending',

@@ -95,6 +95,7 @@ const Claim = ({ isDarkMode }) => {
 
         setIsClaiming(true);
         setErrorMessage('');
+        setSafeTransactionStatus(null);
 
         try {
             const ethersProvider = new BrowserProvider(walletProvider);

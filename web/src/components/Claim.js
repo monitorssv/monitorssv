@@ -78,6 +78,7 @@ const Claim = ({ isDarkMode }) => {
             const rewardsToClaim = cumulativeAmount - claimed;
 
             setEligibleRewards(cumulativeAmount);
+            console.log("======cumulativeAmount======", cumulativeAmount);
             setClaimedRewards(claimed);
             setRewardsToClaim(rewardsToClaim > 0n ? rewardsToClaim : '0');
             setExpectedMerkleRoot(data.ssvRewardInfo.expectedMerkleRoot);
@@ -383,9 +384,7 @@ const RewardItem = ({ label, value, highlight = false, isDarkMode }) => {
 
     const numericValue = Number(value) || 0;
 
-    const formattedValue = numericValue >= 1e18
-        ? (numericValue / 1e18).toFixed(3)
-        : numericValue.toFixed(3);
+    const formattedValue = (numericValue / 1e18).toFixed(3)
 
     return (
         <div className={`${bgColor} rounded-lg p-4 ${highlight ? `border-2 ${borderColor}` : ''}`}>

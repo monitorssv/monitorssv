@@ -2,6 +2,7 @@ package store
 
 import (
 	"errors"
+	"fmt"
 	"github.com/monitorssv/monitorssv/eth1/utils"
 	"gorm.io/gorm"
 	"math/big"
@@ -43,6 +44,29 @@ func CalcClusterOnChainBalance(curBlock uint64, clusterInfo *ClusterInfo) string
 
 func (s *ClusterInfo) TableName() string {
 	return "cluster_infos"
+}
+
+func (s *Store) Get30DayLiquidationRankingClusters(page int, itemsPerPage int, curBlock uint64) ([]ClusterInfo, int64, error) {
+	perPage, offset := pagingCheck(page, itemsPerPage)
+	var totalCount int64
+
+	query := s.db.Model(&ClusterInfo{}).Where("active = ? AND validator_count != 0", true).
+		Where("(liquidation_block < ? OR (liquidation_block > ? AND liquidation_block - ? < 216000))",
+			curBlock, curBlock, curBlock)
+	if err := query.Count(&totalCount).Error; err != nil {
+		return nil, 0, fmt.Errorf("count clusters error: %w", err)
+	}
+
+	var clusters []ClusterInfo
+	if err := query.
+		Order("liquidation_block ASC").
+		Offset(offset).
+		Limit(perPage).
+		Find(&clusters).Error; err != nil {
+		return nil, 0, fmt.Errorf("find clusters error: %w", err)
+	}
+
+	return clusters, totalCount, nil
 }
 
 func (s *Store) GetClusters(page int, itemsPerPage int) ([]ClusterInfo, int64, error) {

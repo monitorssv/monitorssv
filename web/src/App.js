@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Route, NavLink, Routes, useLocation, useNavigate } from 'react-router-dom';
-import { Sun, Moon, Award, Grid, Users, Hexagon, Shield, Menu, X, Bell } from 'lucide-react';
+import { Sun, Moon, Award, Grid, Users, Hexagon, Shield, Menu, X, Bell, Timer } from 'lucide-react';
 import { FaGithub, FaBook, FaHeart } from 'react-icons/fa';
 import { createWeb3Modal, defaultConfig, useWeb3ModalTheme } from '@web3modal/ethers/react'
 
@@ -12,6 +12,7 @@ import AccountDetails from './components/AccountDetails';
 import ClusterDetails from './components/ClusterDetails';
 import Claim from './components/Claim';
 import ClusterMonitor from './components/ClusterMonitor';
+import LiquidationRanking from './components/LiquidationRanking';
 
 const projectId = process.env.REACT_APP_WALLET_CONNECT_PROJECT_ID
 const mainnet = {
@@ -200,6 +201,7 @@ function AppContent({ isDarkMode, toggleDarkMode, network, setNetwork, currentYe
             <Route path="/validators" element={<Validators isDarkMode={isDarkMode} network={network} />} />
             {network === 'mainnet' && <Route path="/claim" element={<Claim isDarkMode={isDarkMode} />} />}
             <Route path="/monitor" element={<ClusterMonitor isDarkMode={isDarkMode} network={network} />} />
+            <Route path="/liquidation" element={<LiquidationRanking isDarkMode={isDarkMode} network={network} />} />
           </Routes>
         </div>
       </main>
@@ -262,9 +264,11 @@ function NavItems({ isDarkMode, mobile = false, network }) {
     { to: "/monitor", icon: <Bell className="w-5 h-5" />, label: "Monitor" },
   ];
 
-  const navItems = network === 'mainnet'
+  var navItems = network === 'mainnet'
     ? [...baseNavItems, { to: "/claim", icon: <Award className="w-5 h-5" />, label: "Claim" }]
     : baseNavItems;
+
+  navItems = [...navItems, { to: "/liquidation", icon: <Timer className="w-5 h-5" />, label: "Liquidation" }]
 
   return navItems.map((item) => (
     <NavLink

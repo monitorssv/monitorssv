@@ -71,6 +71,74 @@ func (ms *MonitorSSV) GetPosData(c *gin.Context) {
 	return
 }
 
+func (ms *MonitorSSV) Get30DayLiquidationRankingClusters(c *gin.Context) {
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil {
+		monitorLog.Warnw("GetClusters", "page", page)
+		ReturnErr(c, badRequestRes)
+		return
+	}
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	if err != nil {
+		monitorLog.Warnw("GetClusters", "limit", limit)
+		ReturnErr(c, badRequestRes)
+		return
+	}
+
+	var clusterInfos []store.ClusterInfo
+	var totalCount int64
+	clusterInfos, totalCount, err = ms.store.Get30DayLiquidationRankingClusters(page, limit, ms.ssv.GetLastProcessedBlock())
+	if err != nil {
+		monitorLog.Errorw("GetClusters: GetClusters", "err", err.Error())
+		ReturnErr(c, serverErrRes)
+		return
+	}
+
+	var clusterDetails []ClusterDetails
+	for _, clusterInfo := range clusterInfos {
+		var clusterDetail ClusterDetails
+		clusterDetail.ID = clusterInfo.ClusterID
+		clusterDetail.Owner = clusterInfo.Owner
+		clusterDetail.Active = clusterInfo.Active
+
+		burnFeeInt := big.NewInt(0).SetUint64(clusterInfo.BurnFee)
+		fee := big.NewInt(0).Mul(burnFeeInt, big.NewInt(2613400))
+		burnFeeStr := utils.ToSSV(fee, "%.2f")
+		clusterDetail.BurnFee = burnFeeStr
+
+		curBlock := ms.ssv.GetLastProcessedBlock()
+
+		onChainBalanceStr := store.CalcClusterOnChainBalance(curBlock, &clusterInfo)
+
+		monitorLog.Infow("CalcOnChainBalance", "onChainBalance", onChainBalanceStr)
+
+		clusterDetail.OnChainBalance = onChainBalanceStr
+
+		operationalRunaway := uint64(0)
+		if clusterInfo.Active && clusterInfo.LiquidationBlock > curBlock {
+			operationalRunaway = clusterInfo.LiquidationBlock - curBlock
+		}
+
+		clusterDetail.OperationalRunaway = operationalRunaway
+		clusterDetail.ValidatorCount = clusterInfo.ValidatorCount
+
+		var operators = make([]OperatorIntro, 0)
+		for _, operatorId := range strings.Split(clusterInfo.OperatorIds, ",") {
+			id, _ := strconv.Atoi(operatorId)
+			operators = append(operators, ms.getOperatorIntro(uint64(id)))
+		}
+		clusterDetail.Operators = operators
+		clusterDetails = append(clusterDetails, clusterDetail)
+	}
+
+	ReturnOk(c, gin.H{
+		"clusters":    clusterDetails,
+		"totalItems":  totalCount,
+		"totalPages":  int(math.Ceil(float64(totalCount) / float64(limit))),
+		"currentPage": page,
+	})
+}
+
 func (ms *MonitorSSV) GetClusters(c *gin.Context) {
 	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
 	if err != nil {

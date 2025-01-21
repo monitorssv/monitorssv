@@ -28,3 +28,13 @@ func TestGetActiveClusters(t *testing.T) {
 	count, err := db.GetActiveClusterCount()
 	t.Log(count, err)
 }
+
+func TestGet30DayLiquidationRankingClusters(t *testing.T) {
+	db := initDB(t)
+	clusters, totalCount, err := db.Get30DayLiquidationRankingClusters(1, 20, 21663093)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(totalCount)
+	t.Log(len(clusters), clusters)
+}

@@ -14,6 +14,7 @@ func (ms *MonitorSSV) NewRouter() *gin.Engine {
 	r.GET("/api/operators", ms.GetOperators)
 	r.GET("/api/clusters", ms.GetClusters)
 	r.GET("/api/clusterDetails", ms.GetClusterDetails)
+	r.GET("/api/get30DayLiquidationRankingClusters", ms.Get30DayLiquidationRankingClusters)
 	r.GET("/api/validators", ms.GetValidators)
 	r.GET("/api/events", ms.GetEvents)
 	r.GET("/api/blocks", ms.GetBlocks)

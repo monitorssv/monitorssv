@@ -24,8 +24,8 @@ type OperatorInfo struct {
 	RegistrationBlock    int64  `gorm:"index" json:"registration_block"`
 	RemoveBlock          int64  `gorm:"index" json:"remove_block"`
 	PendingOperatorFee   string `gorm:"default:0;index" json:"pending_operator_fee"`
-	ApprovalBeginTime    uint64 `gorm:"default:0" json:"approval_begin_time"`
-	ApprovalEndTime      uint64 `gorm:"default:0" json:"approval_end_time"`
+	ApprovalBeginTime    int64  `gorm:"default:0" json:"approval_begin_time"`
+	ApprovalEndTime      int64  `gorm:"default:0" json:"approval_end_time"`
 }
 
 func (s *OperatorInfo) TableName() string {

@@ -27,6 +27,9 @@ type Operator struct {
 	Privacy            bool     `json:"privacy"`
 	Removed            bool     `json:"removed"`
 	WhitelistedAddress []string `json:"whitelistedAddress"`
+	PendingOperatorFee string   `json:"pendingOperatorFee"`
+	BeginUpdateTime    int64    `json:"beginUpdateTime"`
+	EndUpdateTime      int64    `json:"endUpdateTime"`
 }
 
 func (ms *MonitorSSV) getOperatorIntro(id uint64) OperatorIntro {
@@ -127,6 +130,17 @@ func (ms *MonitorSSV) GetOperators(c *gin.Context) {
 			}
 		}
 
+		pendingOperatorFee := info.PendingOperatorFee
+		if pendingOperatorFee != "0" {
+			fee, isOk := big.NewInt(0).SetString(info.PendingOperatorFee, 10)
+			if isOk {
+				fee = big.NewInt(0).Mul(fee, big.NewInt(2613400))
+				pendingOperatorFee = utils.ToSSV(fee, "%.2f")
+			} else {
+				monitorLog.Warnw("GetOperators: Failed to parse operatorFee", "pendingOperatorFee", info.PendingOperatorFee)
+			}
+		}
+
 		privacy := info.PrivacyStatus
 		if !privacy {
 			if len(info.WhitelistedAddress) != 0 || len(info.WhitelistingContract) != 0 {
@@ -149,6 +163,9 @@ func (ms *MonitorSSV) GetOperators(c *gin.Context) {
 			Privacy:            privacy,
 			Removed:            info.RemoveBlock != 0,
 			WhitelistedAddress: strings.Split(info.WhitelistedAddress, ","),
+			PendingOperatorFee: pendingOperatorFee,
+			BeginUpdateTime:    info.ApprovalBeginTime,
+			EndUpdateTime:      info.ApprovalEndTime,
 		})
 	}
 

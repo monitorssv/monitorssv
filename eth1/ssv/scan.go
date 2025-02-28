@@ -292,6 +292,13 @@ func (s *SSV) processBlockEvents(logs []ethtypes.Log) error {
 			if err != nil {
 				return err
 			}
+
+			if s.isSynced.Load() {
+				ssvLog.Infow("OperatorRemoved: calculate the liquidation block", "operatorId", operatorId)
+				// Calculate the liquidation block of the cluster associated with this operator
+				s.calcAllClusterLiquidationChan <- operatorId
+			}
+
 			if err := s.recordEvent(vLog, operatorInfo.Owner, event.Name, ""); err != nil {
 				return err
 			}

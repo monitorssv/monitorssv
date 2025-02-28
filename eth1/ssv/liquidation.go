@@ -170,8 +170,16 @@ func (s *SSV) SimulatedCalcLiquidation(cluster Cluster, networkFee string, opera
 		burnRate += fee.Uint64()
 	}
 
-	nFee, _ := big.NewInt(0).SetString(networkFee, 10)
-	fee := nFee.Uint64() + burnRate
+	var nFee uint64
+	if networkFee != "" {
+		nFeeBig, _ := big.NewInt(0).SetString(networkFee, 10)
+		nFee = nFeeBig.Uint64()
+	} else {
+		nFee = liquidationInfo.NetworkFee
+	}
+	fee := nFee + burnRate
+
+	ssvLog.Infow("SimulatedCalcLiquidation", "clusterId", cluster.ClusterId, "storeNetworkFee", networkFee, "chainNetworkFee", liquidationInfo.NetworkFee, "storeOperatorFees", operatorFees, "chainOperatorFees", liquidationInfo.OperatorsFee)
 
 	if liquidationInfo.ClusterBalance.Cmp(liquidationInfo.MinimumLiquidationCollateral) <= 0 {
 		ssvLog.Infow("CalcSimulatedLiquidation:canLiquidated", "clusterId", cluster.ClusterId)

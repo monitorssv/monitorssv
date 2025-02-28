@@ -72,6 +72,10 @@ func NewStore(cfg *config.Config) (*Store, error) {
 	if err != nil {
 		return nil, err
 	}
+	err = db.AutoMigrate(&NetworkInfo{})
+	if err != nil {
+		return nil, err
+	}
 
 	return &Store{db: db}, nil
 }

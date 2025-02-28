@@ -23,9 +23,9 @@ type ClusterInfo struct {
 	OnChainBalance           string `json:"on_chain_balance"`
 	LiquidationBlock         uint64 `json:"liquidation_block"`
 	CalcLiquidationBlock     uint64 `json:"calc_liquidation_block"`
-	UpcomingBurnFee          uint64 `json:"upcoming_burn_fee"`
-	UpcomingLiquidationBlock uint64 `json:"upcoming_liquidation_block"`
-	UpcomingCalcTime         int64  `json:"upcoming_calc_time"`
+	UpcomingBurnFee          uint64 `gorm:"default:0" json:"upcoming_burn_fee"`
+	UpcomingLiquidationBlock uint64 `gorm:"default:0" json:"upcoming_liquidation_block"`
+	UpcomingCalcTime         int64  `gorm:"default:0" json:"upcoming_calc_time"`
 }
 
 func CalcClusterOnChainBalance(curBlock uint64, clusterInfo *ClusterInfo) string {
@@ -63,6 +63,29 @@ func (s *Store) Get30DayLiquidationRankingClusters(page int, itemsPerPage int, c
 	var clusters []ClusterInfo
 	if err := query.
 		Order("liquidation_block ASC").
+		Offset(offset).
+		Limit(perPage).
+		Find(&clusters).Error; err != nil {
+		return nil, 0, fmt.Errorf("find clusters error: %w", err)
+	}
+
+	return clusters, totalCount, nil
+}
+
+func (s *Store) Get30DaySimulatedLiquidationRankingClusters(page int, itemsPerPage int, curBlock uint64) ([]ClusterInfo, int64, error) {
+	perPage, offset := pagingCheck(page, itemsPerPage)
+	var totalCount int64
+
+	query := s.db.Model(&ClusterInfo{}).Where("active = ? AND validator_count != 0", true).
+		Where("(upcoming_liquidation_block < ? OR (upcoming_liquidation_block > ? AND upcoming_liquidation_block - ? < 216000))",
+			curBlock, curBlock, curBlock)
+	if err := query.Count(&totalCount).Error; err != nil {
+		return nil, 0, fmt.Errorf("count clusters error: %w", err)
+	}
+
+	var clusters []ClusterInfo
+	if err := query.
+		Order("upcoming_liquidation_block ASC").
 		Offset(offset).
 		Limit(perPage).
 		Find(&clusters).Error; err != nil {

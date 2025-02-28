@@ -139,6 +139,93 @@ func (ms *MonitorSSV) Get30DayLiquidationRankingClusters(c *gin.Context) {
 	})
 }
 
+func (ms *MonitorSSV) Get30DaySimulatedLiquidationRankingClusters(c *gin.Context) {
+	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
+	if err != nil {
+		monitorLog.Warnw("GetClusters", "page", page)
+		ReturnErr(c, badRequestRes)
+		return
+	}
+	limit, err := strconv.Atoi(c.DefaultQuery("limit", "10"))
+	if err != nil {
+		monitorLog.Warnw("GetClusters", "limit", limit)
+		ReturnErr(c, badRequestRes)
+		return
+	}
+
+	var clusterInfos []store.ClusterInfo
+	var totalCount int64
+	clusterInfos, totalCount, err = ms.store.Get30DaySimulatedLiquidationRankingClusters(page, limit, ms.ssv.GetLastProcessedBlock())
+	if err != nil {
+		monitorLog.Errorw("GetClusters: GetClusters", "err", err.Error())
+		ReturnErr(c, serverErrRes)
+		return
+	}
+
+	var clusterDetails []ClusterDetails
+	for _, clusterInfo := range clusterInfos {
+		var clusterDetail ClusterDetails
+		clusterDetail.ID = clusterInfo.ClusterID
+		clusterDetail.Owner = clusterInfo.Owner
+		clusterDetail.Active = clusterInfo.Active
+
+		burnFeeInt := big.NewInt(0).SetUint64(clusterInfo.BurnFee)
+		fee := big.NewInt(0).Mul(burnFeeInt, big.NewInt(2613400))
+		burnFeeStr := utils.ToSSV(fee, "%.2f")
+		clusterDetail.BurnFee = burnFeeStr
+
+		if clusterInfo.UpcomingBurnFee != 0 {
+			upcomingBurnFeeInt := big.NewInt(0).SetUint64(clusterInfo.UpcomingBurnFee)
+			upcomingFee := big.NewInt(0).Mul(upcomingBurnFeeInt, big.NewInt(2613400))
+			upcomingBurnFeeStr := utils.ToSSV(upcomingFee, "%.2f")
+			clusterDetail.UpcomingBurnFee = upcomingBurnFeeStr
+		} else {
+			clusterDetail.UpcomingBurnFee = burnFeeStr
+		}
+
+		curBlock := ms.ssv.GetLastProcessedBlock()
+
+		onChainBalanceStr := store.CalcClusterOnChainBalance(curBlock, &clusterInfo)
+
+		monitorLog.Infow("CalcOnChainBalance", "onChainBalance", onChainBalanceStr)
+
+		clusterDetail.OnChainBalance = onChainBalanceStr
+
+		operationalRunaway := uint64(0)
+		if clusterInfo.Active && clusterInfo.LiquidationBlock > curBlock {
+			operationalRunaway = clusterInfo.LiquidationBlock - curBlock
+		}
+
+		clusterDetail.OperationalRunaway = operationalRunaway
+		clusterDetail.ValidatorCount = clusterInfo.ValidatorCount
+
+		upcomingOperationalRunaway := uint64(0)
+		if clusterInfo.UpcomingLiquidationBlock != 0 && clusterInfo.Active && clusterInfo.UpcomingLiquidationBlock > curBlock {
+			upcomingOperationalRunaway = clusterInfo.UpcomingLiquidationBlock - curBlock
+		} else {
+			upcomingOperationalRunaway = operationalRunaway
+		}
+
+		clusterDetail.UpcomingOperationalRunaway = upcomingOperationalRunaway
+		clusterDetail.UpcomingCalcTime = clusterInfo.UpcomingCalcTime
+
+		var operators = make([]OperatorIntro, 0)
+		for _, operatorId := range strings.Split(clusterInfo.OperatorIds, ",") {
+			id, _ := strconv.Atoi(operatorId)
+			operators = append(operators, ms.getOperatorIntro(uint64(id)))
+		}
+		clusterDetail.Operators = operators
+		clusterDetails = append(clusterDetails, clusterDetail)
+	}
+
+	ReturnOk(c, gin.H{
+		"clusters":    clusterDetails,
+		"totalItems":  totalCount,
+		"totalPages":  int(math.Ceil(float64(totalCount) / float64(limit))),
+		"currentPage": page,
+	})
+}
+
 func (ms *MonitorSSV) GetClusters(c *gin.Context) {
 	page, err := strconv.Atoi(c.DefaultQuery("page", "1"))
 	if err != nil {
@@ -221,15 +308,18 @@ func (ms *MonitorSSV) GetClusters(c *gin.Context) {
 }
 
 type ClusterDetails struct {
-	ID                  string          `json:"id"`
-	Owner               string          `json:"owner"`
-	FeeRecipientAddress string          `json:"feeRecipientAddress"`
-	Active              bool            `json:"active"`
-	OnChainBalance      string          `json:"onChainBalance"`
-	BurnFee             string          `json:"burnFee"`
-	OperationalRunaway  uint64          `json:"operationalRunaway"`
-	ValidatorCount      uint32          `json:"validatorCount"`
-	Operators           []OperatorIntro `json:"operators"`
+	ID                         string          `json:"id"`
+	Owner                      string          `json:"owner"`
+	FeeRecipientAddress        string          `json:"feeRecipientAddress"`
+	Active                     bool            `json:"active"`
+	OnChainBalance             string          `json:"onChainBalance"`
+	BurnFee                    string          `json:"burnFee"`
+	OperationalRunaway         uint64          `json:"operationalRunaway"`
+	UpcomingBurnFee            string          `json:"upcomingBurnFee"`
+	UpcomingOperationalRunaway uint64          `json:"upcomingOperationalRunaway"`
+	UpcomingCalcTime           int64           `json:"upcomingCalcTime"`
+	ValidatorCount             uint32          `json:"validatorCount"`
+	Operators                  []OperatorIntro `json:"operators"`
 }
 
 func (ms *MonitorSSV) GetClusterDetails(c *gin.Context) {
@@ -267,6 +357,15 @@ func (ms *MonitorSSV) GetClusterDetails(c *gin.Context) {
 	burnFeeStr := utils.ToSSV(fee, "%.2f")
 	clusterDetails.BurnFee = burnFeeStr
 
+	if clusterInfo.UpcomingBurnFee != 0 {
+		upcomingBurnFeeInt := big.NewInt(0).SetUint64(clusterInfo.UpcomingBurnFee)
+		upcomingFee := big.NewInt(0).Mul(upcomingBurnFeeInt, big.NewInt(2613400))
+		upcomingBurnFeeStr := utils.ToSSV(upcomingFee, "%.2f")
+		clusterDetails.UpcomingBurnFee = upcomingBurnFeeStr
+	} else {
+		clusterDetails.UpcomingBurnFee = burnFeeStr
+	}
+
 	curBlock := ms.ssv.GetLastProcessedBlock()
 
 	onChainBalanceStr := store.CalcClusterOnChainBalance(curBlock, clusterInfo)
@@ -282,6 +381,13 @@ func (ms *MonitorSSV) GetClusterDetails(c *gin.Context) {
 
 	clusterDetails.OperationalRunaway = operationalRunaway
 	clusterDetails.ValidatorCount = clusterInfo.ValidatorCount
+
+	upcomingOperationalRunaway := uint64(0)
+	if clusterInfo.Active && clusterInfo.UpcomingLiquidationBlock > curBlock {
+		upcomingOperationalRunaway = clusterInfo.UpcomingLiquidationBlock - curBlock
+	}
+	clusterDetails.UpcomingOperationalRunaway = upcomingOperationalRunaway
+	clusterDetails.UpcomingCalcTime = clusterInfo.UpcomingCalcTime
 
 	var operators = make([]OperatorIntro, 0)
 	for _, operatorId := range strings.Split(clusterInfo.OperatorIds, ",") {

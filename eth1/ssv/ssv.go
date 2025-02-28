@@ -160,20 +160,14 @@ func (s *SSV) UpdateClusterUpcomingLiquidationLoop() {
 func (s *SSV) calcAllClusterUpcomingLiquidation() error {
 	ssvLog.Info("will calc all cluster upcoming liquidation block")
 
-	chainNetworkInfo, err := s.GetNetworkInfo()
-	if err != nil {
-		return err
-	}
-	upcomingNetworkFee := chainNetworkInfo.NetworkFee
-
+	upcomingNetworkFee := ""
 	storeNetworkInfo, err := s.store.GetNetworkInfo()
 	if err != nil {
 		return err
 	}
-
 	if storeNetworkInfo != nil {
 		upcomingNetworkFee = storeNetworkInfo.UpcomingNetworkFee
-		ssvLog.Infow("calcAllClusterUpcomingLiquidation", "storeNetworkFee", storeNetworkInfo.UpcomingNetworkFee, "chainNetworkFee", chainNetworkInfo.NetworkFee)
+		ssvLog.Infow("calcAllClusterUpcomingLiquidation", "storeNetworkFee", storeNetworkInfo.UpcomingNetworkFee)
 	}
 
 	clusterInfos, err := s.store.GetAllClusters()
@@ -202,7 +196,13 @@ func (s *SSV) calcAllClusterUpcomingLiquidation() error {
 			if err != nil {
 				return err
 			}
-			if operator.PendingOperatorFee != "0" {
+
+			if operator.RemoveBlock != 0 {
+				operatorFees = append(operatorFees, "0")
+				continue
+			}
+
+			if operator.PendingOperatorFee != "0" && time.Now().UTC().Unix() < operator.ApprovalEndTime {
 				operatorFees = append(operatorFees, operator.PendingOperatorFee)
 			} else {
 				operatorFees = append(operatorFees, operator.OperatorFee)
@@ -304,7 +304,11 @@ func (s *SSV) calcAllClusterLiquidation() error {
 				Balance:         balance,
 			},
 		})
+		if err != nil {
+			ssvLog.Errorf("calcAndUpdateClusterLiquidation failed: %s", err)
+		}
 	}
+	ssvLog.Info("calc all cluster liquidation block done")
 
 	return nil
 }
@@ -401,7 +405,7 @@ func (s *SSV) simulatedCalcAndUpdateClusterLiquidation(cluster Cluster, networkF
 		return err
 	}
 
-	ssvLog.Infow("cluster simulated calc liquidation block", "clusterId", cluster.ClusterId, "liquidationBlock", liquidationBlock, "upcomingCalcTime", upcomingCalcTime, "burnFee", burnFee)
+	ssvLog.Infow("cluster simulated calc liquidation block", "clusterId", cluster.ClusterId, "liquidationBlock", liquidationBlock, "upcomingCalcTime", upcomingCalcTime, "upcomingBurnFee", burnFee)
 	return nil
 }
 
@@ -449,7 +453,8 @@ func (s *SSV) updatePendingOperatorFee() {
 			} else {
 				for i, declaredFee := range declaredFees {
 					operatorId := operatorIds[i]
-					if !declaredFee.IsDeclared {
+					if !declaredFee.IsDeclared || (declaredFee.IsDeclared && time.Now().UTC().Unix() > int64(declaredFee.ApprovalEndTime)) {
+						ssvLog.Infow("updatePendingOperatorFee", "operatorId", operatorId, "declaredFee", declaredFee, "timeout", time.Now().UTC().Unix() > int64(declaredFee.ApprovalEndTime))
 						if operators[i].PendingOperatorFee != "0" {
 							ssvLog.Infow("CancelUpdateOperatorFee", "operatorId", operatorId, "storeOperatorDeclaredFee", operators[i].PendingOperatorFee, "chainOperatorDeclaredFee", declaredFee.Fee)
 							err = s.store.CancelUpdateOperatorFee(operatorId)

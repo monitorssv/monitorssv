@@ -142,3 +142,69 @@ func (s *SSV) GetSSVLiquidationInfo(cluster Cluster) (*LiquidationInfo, error) {
 
 	return &info, nil
 }
+
+func (s *SSV) SimulatedCalcLiquidation(cluster Cluster, networkFee string, operatorFees []string) (uint64, uint64, error) {
+	if cluster.ClusterInfo.ValidatorCount == 0 {
+		return 0, 0, noValidatorErr
+	}
+
+	if !cluster.ClusterInfo.Active {
+		return 0, 0, alreadyLiquidatedErr
+	}
+
+	curBlock, err := s.client.BlockNumber()
+	if err != nil {
+		return 0, 0, err
+	}
+
+	liquidationInfo, err := s.GetSSVLiquidationInfo(cluster)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	minimumBlocksBeforeLiquidation := int64(liquidationInfo.LiquidationThresholdPeriod)
+
+	burnRate := uint64(0)
+	for _, opFee := range operatorFees {
+		fee, _ := big.NewInt(0).SetString(opFee, 10)
+		burnRate += fee.Uint64()
+	}
+
+	nFee, _ := big.NewInt(0).SetString(networkFee, 10)
+	fee := nFee.Uint64() + burnRate
+
+	if liquidationInfo.ClusterBalance.Cmp(liquidationInfo.MinimumLiquidationCollateral) <= 0 {
+		ssvLog.Infow("CalcSimulatedLiquidation:canLiquidated", "clusterId", cluster.ClusterId)
+		return curBlock - 1, fee, nil
+	}
+
+	perLiquidationThreshold := big.NewInt(0).Mul(big.NewInt(minimumBlocksBeforeLiquidation), big.NewInt(int64(fee)))
+	liquidationThreshold := big.NewInt(0).Mul(perLiquidationThreshold, big.NewInt(int64(cluster.ClusterInfo.ValidatorCount)))
+
+	if liquidationInfo.ClusterBalance.Cmp(liquidationThreshold) > 0 {
+		// The number of validators and minimum collateral will affect the liquidation runway
+		reserve := liquidationInfo.MinimumLiquidationCollateral
+		if liquidationThreshold.Cmp(reserve) > 0 {
+			reserve = liquidationThreshold
+		}
+
+		activeBalance := big.NewInt(0).Sub(liquidationInfo.ClusterBalance, reserve)
+
+		preValidatorBalance := big.NewInt(0).Div(activeBalance, big.NewInt(int64(cluster.ClusterInfo.ValidatorCount)))
+		if preValidatorBalance.Uint64() == 0 {
+			ssvLog.Infow("CalcSimulatedLiquidation:canLiquidated", "clusterId", cluster.ClusterId)
+			return curBlock - 1, fee, nil
+		}
+
+		activeBlock := big.NewInt(0).Div(preValidatorBalance, big.NewInt(0).SetUint64(fee)).Uint64()
+		if activeBlock == 0 {
+			ssvLog.Infow("CalcSimulatedLiquidation:canLiquidated", "clusterId", cluster.ClusterId)
+			return curBlock - 1, fee, nil
+		}
+
+		return curBlock + activeBlock, fee, nil
+	}
+
+	ssvLog.Infow("CalcSimulatedLiquidation:canLiquidated", "clusterId", cluster.ClusterId)
+	return curBlock - 1, fee, nil
+}

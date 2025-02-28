@@ -18,6 +18,15 @@ func TestGetNetworkInfo(t *testing.T) {
 
 }
 
+func TestGetOperatorDeclaredFee(t *testing.T) {
+	ssv := initSSV(t)
+	declaredFees, err := ssv.GetOperatorDeclaredFee([]uint64{1, 2, 3, 4})
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(declaredFees)
+}
+
 func TestGetSSVRewardMerkleRootOnChain(t *testing.T) {
 	ssv := initSSV(t)
 	root, err := GetSSVRewardMerkleRootOnChain(ssv.client.GetClient())

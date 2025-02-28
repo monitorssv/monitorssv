@@ -60,6 +60,60 @@ func (s *SSV) GetNetworkInfo() (*NetworkInfo, error) {
 	return &info, nil
 }
 
+type OperatorDeclaredFee struct {
+	IsDeclared        bool
+	Fee               string
+	ApprovalBeginTime uint64
+	ApprovalEndTime   uint64
+}
+
+func (s *SSV) GetOperatorDeclaredFee(operatorIds []uint64) ([]OperatorDeclaredFee, error) {
+	var callStructs = make([]utils.Struct0, 0)
+	for _, opId := range operatorIds {
+		data, err := ssvViewABI.Methods[getOperatorDeclaredFee].Inputs.Pack(opId)
+		if err != nil {
+			return nil, err
+		}
+		callStructs = append(callStructs, utils.Struct0{
+			Target:   s.ssvNetworkViewAdd,
+			CallData: append(ssvViewABI.Methods[getOperatorDeclaredFee].ID, data...),
+		})
+	}
+
+	multiCall, err := utils.NewMulticall(s.cfg.Network, s.client.GetClient())
+	if err != nil {
+		return nil, err
+	}
+
+	outs, err := multiCall.MulticallCaller.Aggregate(nil, callStructs)
+	if err != nil {
+		return nil, err
+	}
+
+	var declaredFees = make([]OperatorDeclaredFee, 0)
+	for _, out := range outs[1].([][]uint8) {
+		data, err := ssvViewABI.Methods[getOperatorDeclaredFee].Outputs.Unpack(out)
+		if err != nil {
+			return nil, err
+		}
+
+		isDeclared := data[0].(bool)
+		fee := data[1].(*big.Int).String()
+		beginTime := data[2].(uint64)
+		endTime := data[3].(uint64)
+
+		declaredFee := OperatorDeclaredFee{
+			IsDeclared:        isDeclared,
+			Fee:               fee,
+			ApprovalBeginTime: beginTime,
+			ApprovalEndTime:   endTime,
+		}
+		declaredFees = append(declaredFees, declaredFee)
+	}
+
+	return declaredFees, nil
+}
+
 func (s *SSV) GetOperatorEarnings(operatorIds []uint64) ([]string, error) {
 	var callStructs = make([]utils.Struct0, 0)
 	for _, opId := range operatorIds {

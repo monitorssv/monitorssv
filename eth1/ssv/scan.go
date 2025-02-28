@@ -203,11 +203,39 @@ func (s *SSV) processBlockEvents(logs []ethtypes.Log) error {
 					OldNetworkFee: oldNetworkFee,
 					NewNetworkFee: newNetworkFee,
 				}
+
+				err = s.store.UpdateUpcomingNetworkFee(newNetworkFee.String())
+				if err != nil {
+					ssvLog.Warnw("failed to update network fee for block", "block", vLog.BlockNumber, "err", err)
+					return err
+				}
 			}
 			if err := s.recordEvent(vLog, vLog.Address.String(), event.Name, ""); err != nil {
 				return err
 			}
-		case OperatorFeeDeclared, OperatorFeeDeclarationCancelled, OperatorWithdrawn:
+		case OperatorFeeDeclared:
+			var owner common.Address
+			copy(owner[:], vLog.Topics[1][12:])
+
+			if err := s.recordEvent(vLog, owner.String(), event.Name, ""); err != nil {
+				return err
+			}
+		case OperatorFeeDeclarationCancelled:
+			var owner common.Address
+			copy(owner[:], vLog.Topics[1][12:])
+
+			var operatorId = big.NewInt(0).SetBytes(vLog.Topics[2][:]).Uint64()
+
+			err := s.store.CancelUpdateOperatorFee(operatorId)
+			if err != nil {
+				ssvLog.Warnw("failed to cancel update pending operator fee", "block", vLog.BlockNumber, "err", err)
+				return err
+			}
+
+			if err = s.recordEvent(vLog, owner.String(), event.Name, ""); err != nil {
+				return err
+			}
+		case OperatorWithdrawn:
 			var owner common.Address
 			copy(owner[:], vLog.Topics[1][12:])
 			if err := s.recordEvent(vLog, owner.String(), event.Name, ""); err != nil {

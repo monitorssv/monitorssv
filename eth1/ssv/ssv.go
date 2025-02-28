@@ -75,8 +75,10 @@ func NewSSV(cfg *config.Config, client *client.Eth1Client, store *store.Store, a
 func (s *SSV) Start() {
 	go s.ScanSSVEventLoop()
 	go s.UpdateClusterLiquidationLoop()
+	go s.UpdateClusterUpcomingLiquidationLoop()
 	go s.UpdateOperatorLoop()
 	go s.UpdateClusterEoaOwnerLoop()
+
 }
 
 func (s *SSV) Stop() {
@@ -133,6 +135,97 @@ func (s *SSV) ScanSSVEventLoop() {
 			}
 		}
 	}
+}
+
+func (s *SSV) UpdateClusterUpcomingLiquidationLoop() {
+	now := time.Now().UTC()
+	nextTime := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, time.UTC)
+	duration := nextTime.Sub(now)
+	timer := time.NewTimer(duration)
+	for {
+		<-timer.C
+		ssvLog.Info("UpdateClusterUpcomingLiquidationLoop start")
+
+		err := s.calcAllClusterUpcomingLiquidation()
+		if err != nil {
+			ssvLog.Warnw("UpdateClusterUpcomingLiquidationLoop fail", "err", err)
+		}
+
+		nextTime = nextTime.Add(24 * time.Hour)
+		duration = nextTime.Sub(time.Now().UTC())
+		timer.Reset(duration)
+	}
+}
+
+func (s *SSV) calcAllClusterUpcomingLiquidation() error {
+	ssvLog.Info("will calc all cluster upcoming liquidation block")
+
+	chainNetworkInfo, err := s.GetNetworkInfo()
+	if err != nil {
+		return err
+	}
+	upcomingNetworkFee := chainNetworkInfo.NetworkFee
+
+	storeNetworkInfo, err := s.store.GetNetworkInfo()
+	if err != nil {
+		return err
+	}
+
+	if storeNetworkInfo != nil {
+		upcomingNetworkFee = storeNetworkInfo.UpcomingNetworkFee
+		ssvLog.Infow("calcAllClusterUpcomingLiquidation", "storeNetworkFee", storeNetworkInfo.UpcomingNetworkFee, "chainNetworkFee", chainNetworkInfo.NetworkFee)
+	}
+
+	clusterInfos, err := s.store.GetAllClusters()
+	if err != nil {
+		return err
+	}
+
+	for _, clusterInfo := range clusterInfos {
+		if !clusterInfo.Active {
+			ssvLog.Infow("calcAllClusterUpcomingLiquidation: cluster liquidated", "clusterId", clusterInfo.ClusterID, "validatorCount", clusterInfo.ValidatorCount)
+			continue
+		}
+
+		operatorIds, err := getOperatorIds(clusterInfo.OperatorIds)
+		if err != nil {
+			return err
+		}
+		balance, isOk := big.NewInt(0).SetString(clusterInfo.Balance, 10)
+		if !isOk {
+			return errors.New("failed to parse balance")
+		}
+
+		operatorFees := make([]string, 0)
+		for _, operatorId := range operatorIds {
+			operator, err := s.store.GetOperatorByOperatorId(operatorId)
+			if err != nil {
+				return err
+			}
+			if operator.PendingOperatorFee != "0" {
+				operatorFees = append(operatorFees, operator.PendingOperatorFee)
+			} else {
+				operatorFees = append(operatorFees, operator.OperatorFee)
+			}
+		}
+		err = s.simulatedCalcAndUpdateClusterLiquidation(Cluster{
+			ClusterId:   clusterInfo.ClusterID,
+			Owner:       common.HexToAddress(clusterInfo.Owner),
+			OperatorIds: operatorIds,
+			ClusterInfo: ISSVNetworkCoreCluster{
+				ValidatorCount:  clusterInfo.ValidatorCount,
+				NetworkFeeIndex: clusterInfo.NetworkFeeIndex,
+				Index:           clusterInfo.Index,
+				Active:          clusterInfo.Active,
+				Balance:         balance,
+			},
+		}, upcomingNetworkFee, operatorFees)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (s *SSV) UpdateClusterLiquidationLoop() {
@@ -291,6 +384,27 @@ func (s *SSV) calcAndUpdateClusterLiquidation(cluster Cluster) error {
 	return nil
 }
 
+func (s *SSV) simulatedCalcAndUpdateClusterLiquidation(cluster Cluster, networkFee string, operatorFees []string) error {
+	liquidationBlock, burnFee, err := s.SimulatedCalcLiquidation(cluster, networkFee, operatorFees)
+	if err != nil {
+		if errors.Is(err, noValidatorErr) || errors.Is(err, alreadyLiquidatedErr) {
+			return nil
+		}
+
+		ssvLog.Warnw("failed to calc liquidation block", "clusterId", cluster.ClusterId, "err", err)
+		return err
+	}
+	upcomingCalcTime := time.Now().UTC().Unix()
+	err = s.store.UpdateUpcomingClusterLiquidationInfo(cluster.ClusterId, liquidationBlock, upcomingCalcTime, burnFee)
+	if err != nil {
+		ssvLog.Warnw("failed to update liquidation block", "clusterId", cluster.ClusterId, "err", err)
+		return err
+	}
+
+	ssvLog.Infow("cluster simulated calc liquidation block", "clusterId", cluster.ClusterId, "liquidationBlock", liquidationBlock, "upcomingCalcTime", upcomingCalcTime, "burnFee", burnFee)
+	return nil
+}
+
 func (s *SSV) UpdateOperatorLoop() {
 	ticker := time.NewTicker(8 * time.Hour)
 	for {
@@ -304,7 +418,60 @@ func (s *SSV) UpdateOperatorLoop() {
 
 			s.updateOperatorName()
 			s.updateOperatorEarning()
+			s.updatePendingOperatorFee()
 		}
+	}
+}
+
+func (s *SSV) updatePendingOperatorFee() {
+	itemsPerPage := 100
+	page := 1
+
+	for {
+		operators, totalCount, err := s.store.GetOperators(page, itemsPerPage)
+		if err != nil {
+			ssvLog.Errorw("failed to get operators", "err", err)
+			return
+		}
+
+		totalPages := int(math.Ceil(float64(totalCount) / float64(itemsPerPage)))
+		ssvLog.Infow("updatePendingOperatorFee", "page", page, "totalPages", totalPages, "itemsPerPage", itemsPerPage)
+
+		var operatorIds = make([]uint64, 0)
+		for _, operator := range operators {
+			operatorIds = append(operatorIds, operator.OperatorId)
+		}
+
+		if len(operatorIds) > 0 {
+			declaredFees, err := s.GetOperatorDeclaredFee(operatorIds)
+			if err != nil {
+				ssvLog.Warnw("failed to get operator fee", "err", err)
+			} else {
+				for i, declaredFee := range declaredFees {
+					operatorId := operatorIds[i]
+					if !declaredFee.IsDeclared {
+						if operators[i].PendingOperatorFee != "0" {
+							ssvLog.Infow("CancelUpdateOperatorFee", "operatorId", operatorId, "storeOperatorDeclaredFee", operators[i].PendingOperatorFee, "chainOperatorDeclaredFee", declaredFee.Fee)
+							err = s.store.CancelUpdateOperatorFee(operatorId)
+							if err != nil {
+								ssvLog.Errorw("failed to cancel operator fee for operator", "operatorIds", operatorIds, "err", err)
+								return
+							}
+						}
+						continue
+					}
+					err = s.store.UpdatePendingOperator(operatorId, declaredFee.Fee, declaredFee.ApprovalBeginTime, declaredFee.ApprovalEndTime)
+					if err != nil {
+						ssvLog.Errorw("failed to update operator fee for operator", "operatorIds", operatorIds, "err", err)
+					}
+				}
+			}
+		}
+
+		if page*itemsPerPage >= int(totalCount) {
+			break
+		}
+		page++
 	}
 }
 

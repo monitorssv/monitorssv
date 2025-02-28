@@ -23,6 +23,9 @@ type OperatorInfo struct {
 	WhitelistingContract string `json:"whitelisting_contract"`
 	RegistrationBlock    int64  `gorm:"index" json:"registration_block"`
 	RemoveBlock          int64  `gorm:"index" json:"remove_block"`
+	PendingOperatorFee   string `gorm:"default:0;index" json:"pending_operator_fee"`
+	ApprovalBeginTime    uint64 `gorm:"default:0" json:"approval_begin_time"`
+	ApprovalEndTime      uint64 `gorm:"default:0" json:"approval_end_time"`
 }
 
 func (s *OperatorInfo) TableName() string {
@@ -173,6 +176,20 @@ func (s *Store) UpdateOperatorName(operatorId uint64, name string) error {
 
 func (s *Store) UpdateOperatorFee(operatorId uint64, fee string) error {
 	return s.db.Model(&OperatorInfo{}).Where(&OperatorInfo{OperatorId: operatorId}).Update("operator_fee", fee).Error
+}
+
+func (s *Store) UpdatePendingOperator(operatorId uint64, pendingFee string, beginTime, endTime uint64) error {
+	return s.db.Model(&OperatorInfo{}).Where(&OperatorInfo{OperatorId: operatorId}).Updates(map[string]interface{}{"pending_operator_fee": pendingFee, "approval_begin_time": beginTime, "approval_end_time": endTime}).Error
+}
+
+func (s *Store) CancelUpdateOperatorFee(operatorId uint64) error {
+	return s.db.Model(&OperatorInfo{}).
+		Where("operator_id = ?", operatorId).
+		Updates(map[string]interface{}{
+			"pending_operator_fee": "0",
+			"approval_begin_time":  0,
+			"approval_end_time":    0,
+		}).Error
 }
 
 func (s *Store) UpdateOperatorEarning(operatorId uint64, earning string) error {

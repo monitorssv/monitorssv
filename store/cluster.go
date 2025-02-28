@@ -10,19 +10,22 @@ import (
 
 type ClusterInfo struct {
 	gorm.Model
-	ClusterID            string `gorm:"type:VARCHAR(64); uniqueIndex" json:"cluster_id"`
-	Owner                string `gorm:"type:VARCHAR(64); index" json:"owner"`
-	EoaOwner             string `gorm:"type:VARCHAR(64); index" json:"eoa_owner"`
-	OperatorIds          string `json:"operator_ids"`
-	ValidatorCount       uint32 `gorm:"index" json:"validator_count"`
-	NetworkFeeIndex      uint64 `json:"network_fee_index"`
-	Index                uint64 `json:"cluster_index"`
-	Active               bool   `json:"active"`
-	Balance              string `json:"balance"`
-	BurnFee              uint64 `json:"burn_fee"`
-	OnChainBalance       string `json:"on_chain_balance"`
-	LiquidationBlock     uint64 `json:"liquidation_block"`
-	CalcLiquidationBlock uint64 `json:"calc_liquidation_block"`
+	ClusterID                string `gorm:"type:VARCHAR(64); uniqueIndex" json:"cluster_id"`
+	Owner                    string `gorm:"type:VARCHAR(64); index" json:"owner"`
+	EoaOwner                 string `gorm:"type:VARCHAR(64); index" json:"eoa_owner"`
+	OperatorIds              string `json:"operator_ids"`
+	ValidatorCount           uint32 `gorm:"index" json:"validator_count"`
+	NetworkFeeIndex          uint64 `json:"network_fee_index"`
+	Index                    uint64 `json:"cluster_index"`
+	Active                   bool   `json:"active"`
+	Balance                  string `json:"balance"`
+	BurnFee                  uint64 `json:"burn_fee"`
+	OnChainBalance           string `json:"on_chain_balance"`
+	LiquidationBlock         uint64 `json:"liquidation_block"`
+	CalcLiquidationBlock     uint64 `json:"calc_liquidation_block"`
+	UpcomingBurnFee          uint64 `json:"upcoming_burn_fee"`
+	UpcomingLiquidationBlock uint64 `json:"upcoming_liquidation_block"`
+	UpcomingCalcTime         int64  `json:"upcoming_calc_time"`
 }
 
 func CalcClusterOnChainBalance(curBlock uint64, clusterInfo *ClusterInfo) string {
@@ -202,6 +205,10 @@ func (s *Store) ClusterLiquidation(clusterID string, liquidationBlock uint64) er
 
 func (s *Store) UpdateClusterLiquidationInfo(clusterID string, liquidationBlock uint64, calculateLiquidationBlock uint64, burnFee uint64, onChainBalance string) error {
 	return s.db.Model(&ClusterInfo{}).Where(&ClusterInfo{ClusterID: clusterID}).Updates(map[string]interface{}{"liquidation_block": liquidationBlock, "burn_fee": burnFee, "calc_liquidation_block": calculateLiquidationBlock, "on_chain_balance": onChainBalance}).Error
+}
+
+func (s *Store) UpdateUpcomingClusterLiquidationInfo(clusterID string, upcomingLiquidationBlock uint64, upcomingCalcTime int64, upcomingBurnFee uint64) error {
+	return s.db.Model(&ClusterInfo{}).Where(&ClusterInfo{ClusterID: clusterID}).Updates(map[string]interface{}{"upcoming_liquidation_block": upcomingLiquidationBlock, "upcoming_burn_fee": upcomingBurnFee, "upcoming_calc_time": upcomingCalcTime}).Error
 }
 
 func (s *Store) UpdateClusterStatus(clusterID string, status string) error {

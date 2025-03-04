@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { StatusLabel, ValidatorStatusLabel, OperatorDisplay, PublicKeyDisplay } from './SharedComponents';
+import { AlertTriangle } from 'lucide-react';
 
 const ClusterDetails = ({ isDarkMode, network }) => {
     const { id } = useParams();
@@ -158,7 +159,7 @@ const ClusterDetails = ({ isDarkMode, network }) => {
     };
 
     const fetchDataForActiveTab = () => {
-        // eslint-disable-next-line default-case 
+        // eslint-disable-next-line default-case
         switch (activeTab) {
             case 'validators':
                 fetchValidators();
@@ -238,7 +239,7 @@ const ClusterDetails = ({ isDarkMode, network }) => {
     };
 
     const setCurrentPage = (page) => {
-        // eslint-disable-next-line default-case 
+        // eslint-disable-next-line default-case
         switch (activeTab) {
             case 'validators':
                 setValidatorsPage(page);
@@ -253,7 +254,7 @@ const ClusterDetails = ({ isDarkMode, network }) => {
     };
 
     const setItemsPerPage = (items) => {
-        // eslint-disable-next-line default-case 
+        // eslint-disable-next-line default-case
         switch (activeTab) {
             case 'validators':
                 setValidatorsPerPage(items);
@@ -317,10 +318,32 @@ const ClusterDetails = ({ isDarkMode, network }) => {
                 {clusterData.burnFee}
                 <span className="ml-1 text-sm text-gray-400">ssv</span>
             </div>
-            <div className="mb-1">
-                <span className="font-semibold mr-2">Operational Runaway:</span>
-                {clusterData.validatorCount === 0 ? '--' : calculateDays(clusterData.operationalRunaway)}
-                <span className="ml-1 text-sm text-gray-400">days</span>
+            <div className="mb-1 flex items-center">
+                <span className="font-semibold mr-2">Operational Runway:</span>
+                <span>
+                    {clusterData.validatorCount === 0 ? '--' : calculateDays(clusterData.operationalRunaway)}
+                    <span className="ml-1 text-sm text-gray-400">days</span>
+                </span>
+                {clusterData.burnFee !== clusterData.upcomingBurnFee && (
+                    <div className="relative group ml-2">
+                        <AlertTriangle className="w-4 h-4 text-yellow-500" />
+                        <div className={`absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 
+                            ${isDarkMode
+                            ? 'bg-gray-900 text-white'
+                            : 'bg-white text-gray-800 shadow-lg border border-gray-200'
+                        } 
+                            text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap z-10`}>
+                            <div>Upcoming Burn Fee: {clusterData.upcomingBurnFee} ssv</div>
+                            <div>Upcoming Operational Runway: {calculateDays(clusterData.upcomingOperationalRunaway)} days</div>
+                            <div className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1 border-4 border-transparent 
+                                ${isDarkMode
+                                ? 'border-t-gray-900'
+                                : 'border-t-white'
+                            }`}>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
             <div className="mb-1">
                 <span className="font-semibold mr-2">Owner:</span>
@@ -402,7 +425,7 @@ const ClusterDetails = ({ isDarkMode, network }) => {
                         className={`px-3 py-1 rounded ${isDarkMode
                             ? 'bg-gray-800 text-white hover:bg-gray-700'
                             : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                            } ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        } ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         &lt;&lt;
                     </button>
@@ -412,12 +435,12 @@ const ClusterDetails = ({ isDarkMode, network }) => {
                         className={`px-3 py-1 rounded ${isDarkMode
                             ? 'bg-gray-800 text-white hover:bg-gray-700'
                             : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                            } ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        } ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         &lt;
                     </button>
                     <span className={`px-3 py-1 rounded ${isDarkMode ? 'bg-blue-500 text-white' : 'bg-blue-100 text-blue-800'
-                        }`}>
+                    }`}>
                         {currentPage} / {totalPages}
                     </span>
                     <button
@@ -426,7 +449,7 @@ const ClusterDetails = ({ isDarkMode, network }) => {
                         className={`px-3 py-1 rounded ${isDarkMode
                             ? 'bg-gray-800 text-white hover:bg-gray-700'
                             : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                            } ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        } ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         &gt;
                     </button>
@@ -436,7 +459,7 @@ const ClusterDetails = ({ isDarkMode, network }) => {
                         className={`px-3 py-1 rounded ${isDarkMode
                             ? 'bg-gray-800 text-white hover:bg-gray-700'
                             : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                            } ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        } ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         &gt;&gt;
                     </button>
@@ -467,10 +490,10 @@ const ClusterDetails = ({ isDarkMode, network }) => {
                             : isDarkMode
                                 ? 'bg-gray-700 text-gray-300'
                                 : 'bg-gray-200 text-gray-700'
-                            } ${isTabDisabled(tab)
-                                ? 'opacity-50 cursor-not-allowed'
-                                : 'hover:bg-blue-600 hover:text-white'
-                            }`}
+                        } ${isTabDisabled(tab)
+                            ? 'opacity-50 cursor-not-allowed'
+                            : 'hover:bg-blue-600 hover:text-white'
+                        }`}
                         onClick={() => {
                             if (!isTabDisabled(tab)) {
                                 setActiveTab(tab);
@@ -491,121 +514,121 @@ const ClusterDetails = ({ isDarkMode, network }) => {
                 {activeTab === 'validators' && validators.length > 0 && (
                     <table className="w-full">
                         <thead>
-                            <tr className={isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}>
-                                <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Public Key</th>
-                                <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Status</th>
-                                <th className={`p-3 text-center font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Online</th>
-                            </tr>
+                        <tr className={isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}>
+                            <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Public Key</th>
+                            <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Status</th>
+                            <th className={`p-3 text-center font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Online</th>
+                        </tr>
                         </thead>
                         <tbody>
-                            {activeData.map((validator, index) => (
-                                <tr key={validator.publicKey} className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} ${isDarkMode
-                                    ? index % 2 === 0 ? 'bg-gray-800' : 'bg-gray-750'
-                                    : index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
-                                    }`}>
-                                    <td className={`p-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}>
-                                        <PublicKeyDisplay
-                                            publicKey={validator.publicKey}
-                                            beaconchainLink={getBeaconscanUrl('validator', `0x${validator.publicKey}`)}
-                                            explorerssvLink={getSSVExploereUrl('validators', `0x${validator.publicKey}`)}
-                                            isDarkMode={isDarkMode}
-                                            isTruncate={false}
-                                        />
-                                    </td>
-                                    <td className="p-3"><ValidatorStatusLabel status={validator.status} /></td>
-                                    <td className="p-3">
-                                        <div className="flex justify-center items-center">
-                                            {network === 'mainnet' ? (
-                                                <span className={`inline-block w-3 h-3 rounded-full ${validator.online ? 'bg-green-500' : 'bg-gray-500'
-                                                    }`}></span>
-                                            ) : (
-                                                <span>-</span>
-                                            )}
-                                        </div>
-                                    </td>
-                                </tr>
-                            ))}
+                        {activeData.map((validator, index) => (
+                            <tr key={validator.publicKey} className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} ${isDarkMode
+                                ? index % 2 === 0 ? 'bg-gray-800' : 'bg-gray-750'
+                                : index % 2 === 0 ? 'bg-gray-50' : 'bg-white'
+                            }`}>
+                                <td className={`p-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}>
+                                    <PublicKeyDisplay
+                                        publicKey={validator.publicKey}
+                                        beaconchainLink={getBeaconscanUrl('validator', `0x${validator.publicKey}`)}
+                                        explorerssvLink={getSSVExploereUrl('validators', `0x${validator.publicKey}`)}
+                                        isDarkMode={isDarkMode}
+                                        isTruncate={false}
+                                    />
+                                </td>
+                                <td className="p-3"><ValidatorStatusLabel status={validator.status} /></td>
+                                <td className="p-3">
+                                    <div className="flex justify-center items-center">
+                                        {network === 'mainnet' ? (
+                                            <span className={`inline-block w-3 h-3 rounded-full ${validator.online ? 'bg-green-500' : 'bg-gray-500'
+                                            }`}></span>
+                                        ) : (
+                                            <span>-</span>
+                                        )}
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
                         </tbody>
                     </table>
                 )}
                 {activeTab === 'blocks' && blocks.length > 0 && (
                     <table className="w-full">
                         <thead>
-                            <tr className={isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}>
-                                <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Epoch</th>
-                                <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Slot</th>
-                                <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Block</th>
-                                <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Proposer</th>
-                                <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Status</th>
-                            </tr>
+                        <tr className={isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}>
+                            <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Epoch</th>
+                            <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Slot</th>
+                            <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Block</th>
+                            <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Proposer</th>
+                            <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Status</th>
+                        </tr>
                         </thead>
                         <tbody>
-                            {activeData.map((item) => (
-                                <tr key={item.id} className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                                    <td className={`p-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}>{item.epoch}</td>
-                                    <td className="p-2">
+                        {activeData.map((item) => (
+                            <tr key={item.id} className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                                <td className={`p-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}>{item.epoch}</td>
+                                <td className="p-2">
+                                    <a
+                                        href={getBeaconscanUrl('slot', item.slot)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-500 hover:underline"
+                                    >
+                                        {item.slot}
+                                    </a>
+                                </td>
+                                <td className={`p-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}>
+                                    {item.blockNumber !== 0 ? (
                                         <a
-                                            href={getBeaconscanUrl('slot', item.slot)}
+                                            href={getEtherscanUrl('block', item.blockNumber)}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="text-blue-500 hover:underline"
+                                            className={`hover:underline ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}
                                         >
-                                            {item.slot}
+                                            {item.blockNumber}
                                         </a>
-                                    </td>
-                                    <td className={`p-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}>
-                                        {item.blockNumber !== 0 ? (
-                                            <a
-                                                href={getEtherscanUrl('block', item.blockNumber)}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className={`hover:underline ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}
-                                            >
-                                                {item.blockNumber}
-                                            </a>
-                                        ) : (
-                                            '--'
-                                        )}
-                                    </td>
-                                    <td className={`p-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}>{item.proposer}</td>
-                                    <td className={`p-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}>
-                                        {item.blockNumber !== 0 ? (
-                                            <span className="text-green-500 font-bold">Proposed</span>
-                                        ) : (
-                                            <span className="text-red-500 font-bold">Missed</span>
-                                        )}
-                                    </td>
-                                </tr>
-                            ))}
+                                    ) : (
+                                        '--'
+                                    )}
+                                </td>
+                                <td className={`p-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}>{item.proposer}</td>
+                                <td className={`p-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}>
+                                    {item.blockNumber !== 0 ? (
+                                        <span className="text-green-500 font-bold">Proposed</span>
+                                    ) : (
+                                        <span className="text-red-500 font-bold">Missed</span>
+                                    )}
+                                </td>
+                            </tr>
+                        ))}
                         </tbody>
                     </table>
                 )}
                 {activeTab === 'history' && events.length > 0 && (
                     <table className="w-full">
                         <thead>
-                            <tr className={isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}>
-                                <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Block</th>
-                                <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Transaction Hash</th>
-                                <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Action</th>
-                            </tr>
+                        <tr className={isDarkMode ? 'bg-gray-700' : 'bg-gray-100'}>
+                            <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Block</th>
+                            <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Transaction Hash</th>
+                            <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Action</th>
+                        </tr>
                         </thead>
                         <tbody>
-                            {activeData.map((item, index) => (
-                                <tr key={`${item.transactionHash}-${index}`} className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-                                    <td className={`p-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}>{item.block}</td>
-                                    <td className={`p-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}>
-                                        <a
-                                            href={getEtherscanUrl('tx', item.transactionHash)}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className={`hover:underline ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}
-                                        >
-                                            {item.transactionHash}
-                                        </a>
-                                    </td>
-                                    <td className={`p-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}>{item.action}</td>
-                                </tr>
-                            ))}
+                        {activeData.map((item, index) => (
+                            <tr key={`${item.transactionHash}-${index}`} className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+                                <td className={`p-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}>{item.block}</td>
+                                <td className={`p-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}>
+                                    <a
+                                        href={getEtherscanUrl('tx', item.transactionHash)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className={`hover:underline ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}
+                                    >
+                                        {item.transactionHash}
+                                    </a>
+                                </td>
+                                <td className={`p-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}>{item.action}</td>
+                            </tr>
+                        ))}
                         </tbody>
                     </table >
                 )}

@@ -38,6 +38,10 @@ func TestLiquidationAlarm(t *testing.T) {
 	alarmDaemon := initAlarm(t)
 	alarmDaemon.liquidationAlarm()
 }
+func TestSimulatedLiquidationAlarm(t *testing.T) {
+	alarmDaemon := initAlarm(t)
+	alarmDaemon.simulatedLiquidationAlarm()
+}
 func TestValidatorExitedButNotRemovedAlarm(t *testing.T) {
 	alarmDaemon := initAlarm(t)
 	alarmDaemon.validatorExitedButNotRemovedAlarm()

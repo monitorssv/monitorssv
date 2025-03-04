@@ -143,7 +143,31 @@ func (s *SSV) GetSSVLiquidationInfo(cluster Cluster) (*LiquidationInfo, error) {
 	return &info, nil
 }
 
-func (s *SSV) SimulatedCalcLiquidation(cluster Cluster, networkFee string, operatorFees []string) (uint64, uint64, error) {
+func (s *SSV) GetNetworkFee() (uint64, uint64, error) {
+	var callStructs = make([]utils.Struct0, 0)
+	callStructs = append(callStructs, utils.Struct0{
+		Target:   s.ssvNetworkViewAdd,
+		CallData: ssvViewABI.Methods[getNetworkFee].ID,
+	})
+
+	multiCall, err := utils.NewMulticall(s.cfg.Network, s.client.GetClient())
+	if err != nil {
+		return 0, 0, err
+	}
+
+	outs, err := multiCall.MulticallCaller.Aggregate(nil, callStructs)
+	if err != nil {
+		return 0, 0, err
+	}
+	results := make([]*big.Int, 0)
+	for _, r := range outs[1].([][]uint8) {
+		results = append(results, big.NewInt(0).SetBytes(r))
+	}
+
+	return outs[0].(*big.Int).Uint64(), results[0].Uint64(), nil
+}
+
+func (s *SSV) SimulatedCalcLiquidation(cluster Cluster, networkFee uint64, operatorFees []string) (uint64, uint64, error) {
 	if cluster.ClusterInfo.ValidatorCount == 0 {
 		return 0, 0, noValidatorErr
 	}
@@ -171,9 +195,8 @@ func (s *SSV) SimulatedCalcLiquidation(cluster Cluster, networkFee string, opera
 	}
 
 	var nFee uint64
-	if networkFee != "" {
-		nFeeBig, _ := big.NewInt(0).SetString(networkFee, 10)
-		nFee = nFeeBig.Uint64()
+	if networkFee != 0 {
+		nFee = networkFee
 	} else {
 		nFee = liquidationInfo.NetworkFee
 	}

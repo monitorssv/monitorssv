@@ -204,9 +204,10 @@ func (s *SSV) processBlockEvents(logs []ethtypes.Log) error {
 					NewNetworkFee: newNetworkFee,
 				}
 
-				err = s.store.UpdateUpcomingNetworkFee(newNetworkFee.String())
-				if err != nil {
-					ssvLog.Warnw("failed to update network fee for block", "block", vLog.BlockNumber, "err", err)
+				err1 := s.store.UpdateUpcomingNetworkFee(newNetworkFee.Uint64())
+				err2 := s.store.UpdateCurrentNetworkFee(newNetworkFee.Uint64())
+				if err1 != nil || err2 != nil {
+					ssvLog.Warnw("failed to update network fee", "block", vLog.BlockNumber, "err", err)
 					return err
 				}
 			}

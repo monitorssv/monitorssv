@@ -5,8 +5,10 @@ import (
 	logging "github.com/ipfs/go-log/v2"
 	"github.com/monitorssv/monitorssv/alert"
 	"github.com/monitorssv/monitorssv/eth1/ssv"
+	"github.com/monitorssv/monitorssv/eth1/utils"
 	"github.com/monitorssv/monitorssv/eth2"
 	"github.com/monitorssv/monitorssv/store"
+	"math/big"
 	"time"
 )
 
@@ -62,4 +64,39 @@ func (ms *MonitorSSV) Status(c *gin.Context) {
 	status.CLLastValidatorMonitoringEpoch = ms.beaconMonitor.GetLastValidatorMonitorEpoch()
 
 	ReturnOk(c, status)
+}
+
+type NetworkFee struct {
+	CurrentFee  string `json:"current"`
+	UpcomingFee string `json:"upcoming"`
+}
+
+func (ms *MonitorSSV) GetNetworkFees(c *gin.Context) {
+	chainNetworkInfo, err := ms.ssv.GetNetworkInfo()
+	if err != nil {
+		monitorLog.Errorw("GetNetworkFees: chain.GetNetworkInfo", "err", err.Error())
+		ReturnErr(c, serverErrRes)
+		return
+	}
+
+	storeNetworkInfo, err := ms.store.GetNetworkInfo()
+	if err != nil {
+		monitorLog.Errorw("GetNetworkFees: store.GetNetworkInfo", "err", err.Error())
+		ReturnErr(c, serverErrRes)
+		return
+	}
+
+	var upcomingNetworkFee = chainNetworkInfo.NetworkFee
+	if storeNetworkInfo != nil {
+		storeNetworkFee := big.NewInt(0).SetUint64(storeNetworkInfo.UpcomingNetworkFee)
+		fee := big.NewInt(0).Mul(storeNetworkFee, big.NewInt(2613400))
+		upcomingNetworkFee = utils.ToSSV(fee, "%.2f")
+	}
+
+	networkFee := NetworkFee{
+		CurrentFee:  chainNetworkInfo.NetworkFee,
+		UpcomingFee: upcomingNetworkFee,
+	}
+
+	ReturnOk(c, networkFee)
 }

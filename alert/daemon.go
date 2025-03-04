@@ -123,6 +123,10 @@ func (d *AlarmDaemon) Start() {
 	if err != nil {
 		panic(err)
 	}
+	_, err = d.cron.AddFunc("0 0 * * *", d.simulatedLiquidationAlarm)
+	if err != nil {
+		panic(err)
+	}
 	_, err = d.cron.AddFunc("0 0 * * *", d.validatorExitedButNotRemovedAlarm)
 	if err != nil {
 		panic(err)
@@ -190,6 +194,56 @@ func (d *AlarmDaemon) liquidationAlarm() {
 				err = alarm.Send(msg)
 				if err != nil {
 					log.Warnw("liquidationAlarm: Send", "msg", msg, "err", err)
+				}
+			}
+		}
+	}
+}
+
+// day 0 0 * * *
+func (d *AlarmDaemon) simulatedLiquidationAlarm() {
+	curBlock, err := d.client.BlockNumber()
+	if err != nil {
+		log.Warnw("simulatedLiquidationAlarm: BlockNumber", "err", err)
+		return
+	}
+
+	alarmConfigs, err := d.getAllAlarmInfos()
+	if err != nil {
+		log.Errorw("simulatedLiquidationAlarm: getAllAlarmInfos", "err", err)
+		return
+	}
+
+	for _, ac := range alarmConfigs {
+		clusterInfos, err := d.store.GetAllClusterByEoaOwner(ac.EoaOwner)
+		if err != nil {
+			log.Errorw("simulatedLiquidationAlarm: GetAllClusterByEoaOwner", "err", err)
+			continue
+		}
+
+		alarm, err := NewAlarm(ac.AlarmType, ac.AlarmChannel)
+		if err != nil {
+			log.Warnw("simulatedLiquidationAlarm: NewAlarm", "owner", ac.EoaOwner, "err", err)
+			continue
+		}
+
+		for _, clusterInfo := range clusterInfos {
+			if clusterInfo.ValidatorCount == 0 {
+				log.Infow("simulatedLiquidationAlarm: cluster has no validators, skip", "cluster", clusterInfo.ClusterID)
+				continue
+			}
+
+			log.Infow("simulatedLiquidationAlarm", "cluster", clusterInfo.ClusterID, "curBlock", curBlock, "upcomingLiquidationBlock", clusterInfo.UpcomingLiquidationBlock, "ReportLiquidationThreshold", ac.ReportLiquidationThreshold)
+
+			if clusterInfo.UpcomingLiquidationBlock != 0 && curBlock+ac.ReportLiquidationThreshold >= clusterInfo.UpcomingLiquidationBlock {
+				onChainBalanceStr := store.CalcClusterOnChainBalance(curBlock, &clusterInfo)
+				liquidationMsgFormat := "MonitorSSV: Simulated Liquidation Warning!\n  Cluster: %s\n  Cluster Balance: %s ssv\n  Upcoming Liquidation Block: %d\n  Upcoming Operational Runway: %d days"
+
+				msg := fmt.Sprintf(liquidationMsgFormat, clusterInfo.ClusterID, onChainBalanceStr, clusterInfo.UpcomingLiquidationBlock, calcRunway(clusterInfo.UpcomingLiquidationBlock, curBlock))
+				log.Infow("simulatedLiquidationAlarm", "msg", msg)
+				err = alarm.Send(msg)
+				if err != nil {
+					log.Warnw("simulatedLiquidationAlarm: Send", "msg", msg, "err", err)
 				}
 			}
 		}

@@ -139,7 +139,7 @@ func (s *SSV) ScanSSVEventLoop() {
 
 func (s *SSV) UpdateClusterUpcomingLiquidationLoop() {
 	now := time.Now().UTC()
-	nextTime := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, time.UTC)
+	nextTime := time.Date(now.Year(), now.Month(), now.Day()+1, 23, 0, 0, 0, time.UTC)
 	duration := nextTime.Sub(now)
 	timer := time.NewTimer(duration)
 	for {
@@ -159,16 +159,6 @@ func (s *SSV) UpdateClusterUpcomingLiquidationLoop() {
 
 func (s *SSV) calcAllClusterUpcomingLiquidation() error {
 	ssvLog.Info("will calc all cluster upcoming liquidation block")
-
-	upcomingNetworkFee := ""
-	storeNetworkInfo, err := s.store.GetNetworkInfo()
-	if err != nil {
-		return err
-	}
-	if storeNetworkInfo != nil {
-		upcomingNetworkFee = storeNetworkInfo.UpcomingNetworkFee
-		ssvLog.Infow("calcAllClusterUpcomingLiquidation", "storeNetworkFee", storeNetworkInfo.UpcomingNetworkFee)
-	}
 
 	clusterInfos, err := s.store.GetAllClusters()
 	if err != nil {
@@ -190,24 +180,6 @@ func (s *SSV) calcAllClusterUpcomingLiquidation() error {
 			return errors.New("failed to parse balance")
 		}
 
-		operatorFees := make([]string, 0)
-		for _, operatorId := range operatorIds {
-			operator, err := s.store.GetOperatorByOperatorId(operatorId)
-			if err != nil {
-				return err
-			}
-
-			if operator.RemoveBlock != 0 {
-				operatorFees = append(operatorFees, "0")
-				continue
-			}
-
-			if operator.PendingOperatorFee != "0" && time.Now().UTC().Unix() < operator.ApprovalEndTime {
-				operatorFees = append(operatorFees, operator.PendingOperatorFee)
-			} else {
-				operatorFees = append(operatorFees, operator.OperatorFee)
-			}
-		}
 		err = s.simulatedCalcAndUpdateClusterLiquidation(Cluster{
 			ClusterId:   clusterInfo.ClusterID,
 			Owner:       common.HexToAddress(clusterInfo.Owner),
@@ -219,7 +191,7 @@ func (s *SSV) calcAllClusterUpcomingLiquidation() error {
 				Active:          clusterInfo.Active,
 				Balance:         balance,
 			},
-		}, upcomingNetworkFee, operatorFees)
+		})
 		if err != nil {
 			return err
 		}
@@ -246,6 +218,12 @@ func (s *SSV) UpdateClusterLiquidationLoop() {
 				err := s.calcAndUpdateClusterLiquidation(cluster)
 				if err != nil {
 					ssvLog.Warnf("calcAndUpdateClusterLiquidation failed: %s", err)
+					continue
+				}
+
+				err = s.simulatedCalcAndUpdateClusterLiquidation(cluster)
+				if err != nil {
+					ssvLog.Warnf("simulatedCalcAndUpdateClusterLiquidation failed: %s", err)
 					continue
 				}
 
@@ -388,7 +366,35 @@ func (s *SSV) calcAndUpdateClusterLiquidation(cluster Cluster) error {
 	return nil
 }
 
-func (s *SSV) simulatedCalcAndUpdateClusterLiquidation(cluster Cluster, networkFee string, operatorFees []string) error {
+func (s *SSV) simulatedCalcAndUpdateClusterLiquidation(cluster Cluster) error {
+	networkFee := uint64(0)
+	storeNetworkInfo, err := s.store.GetNetworkInfo()
+	if err != nil {
+		return err
+	}
+	if storeNetworkInfo != nil {
+		networkFee = storeNetworkInfo.UpcomingNetworkFee
+	}
+
+	operatorFees := make([]string, 0)
+	for _, operatorId := range cluster.OperatorIds {
+		operator, err := s.store.GetOperatorByOperatorId(operatorId)
+		if err != nil {
+			return err
+		}
+
+		if operator.RemoveBlock != 0 {
+			operatorFees = append(operatorFees, "0")
+			continue
+		}
+
+		if operator.PendingOperatorFee != "0" && time.Now().UTC().Unix() < operator.ApprovalEndTime {
+			operatorFees = append(operatorFees, operator.PendingOperatorFee)
+		} else {
+			operatorFees = append(operatorFees, operator.OperatorFee)
+		}
+	}
+
 	liquidationBlock, burnFee, err := s.SimulatedCalcLiquidation(cluster, networkFee, operatorFees)
 	if err != nil {
 		if errors.Is(err, noValidatorErr) || errors.Is(err, alreadyLiquidatedErr) {
@@ -465,6 +471,9 @@ func (s *SSV) updatePendingOperatorFee() {
 						}
 						continue
 					}
+
+					ssvLog.Infow("UpdatePendingOperator", "operatorId", operatorId, "operatorDeclaredFee", declaredFee.Fee, "beginTime", declaredFee.ApprovalBeginTime, "endTime", declaredFee.ApprovalEndTime)
+
 					err = s.store.UpdatePendingOperator(operatorId, declaredFee.Fee, declaredFee.ApprovalBeginTime, declaredFee.ApprovalEndTime)
 					if err != nil {
 						ssvLog.Errorw("failed to update operator fee for operator", "operatorIds", operatorIds, "err", err)

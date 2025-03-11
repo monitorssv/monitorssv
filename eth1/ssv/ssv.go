@@ -193,7 +193,7 @@ func (s *SSV) calcAllClusterUpcomingLiquidation() error {
 			},
 		})
 		if err != nil {
-			return err
+			ssvLog.Infow("calcAllClusterUpcomingLiquidation: fail", "err", err)
 		}
 	}
 
@@ -239,6 +239,10 @@ func (s *SSV) UpdateClusterLiquidationLoop() {
 				err := s.calcAllClusterLiquidation()
 				if err != nil {
 					ssvLog.Warnf("CalcAllClusterLiquidation failed: %s", err)
+				}
+				err = s.calcAllClusterUpcomingLiquidation()
+				if err != nil {
+					ssvLog.Warnf("calcAllClusterUpcomingLiquidation failed: %s", err)
 				}
 				continue
 			}

@@ -235,7 +235,9 @@ func (d *AlarmDaemon) simulatedLiquidationAlarm() {
 
 			log.Infow("simulatedLiquidationAlarm", "cluster", clusterInfo.ClusterID, "curBlock", curBlock, "upcomingLiquidationBlock", clusterInfo.UpcomingLiquidationBlock, "ReportLiquidationThreshold", ac.ReportLiquidationThreshold)
 
-			if clusterInfo.UpcomingLiquidationBlock != 0 && curBlock+ac.ReportLiquidationThreshold >= clusterInfo.UpcomingLiquidationBlock {
+			if clusterInfo.UpcomingLiquidationBlock != 0 &&
+				clusterInfo.UpcomingLiquidationBlock != clusterInfo.LiquidationBlock &&
+				curBlock+ac.ReportLiquidationThreshold >= clusterInfo.UpcomingLiquidationBlock {
 				onChainBalanceStr := store.CalcClusterOnChainBalance(curBlock, &clusterInfo)
 				liquidationMsgFormat := "MonitorSSV: Simulated Liquidation Warning!\n  Cluster: %s\n  Cluster Balance: %s ssv\n  Upcoming Liquidation Block: %d\n  Upcoming Operational Runway: %d days"
 

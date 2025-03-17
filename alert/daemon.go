@@ -187,9 +187,9 @@ func (d *AlarmDaemon) liquidationAlarm() {
 
 			if curBlock+ac.ReportLiquidationThreshold >= clusterInfo.LiquidationBlock {
 				onChainBalanceStr := store.CalcClusterOnChainBalance(curBlock, &clusterInfo)
-				liquidationMsgFormat := "MonitorSSV: Liquidation Warning!\n  Cluster: %s\n  Cluster Balance: %s ssv\n  Liquidation Block: %d\n  Operational Runway: %d days"
+				liquidationMsgFormat := "MonitorSSV: Liquidation Warning!\n  Cluster: %s\n  Cluster Balance: %s ssv\n  Liquidation Block: %d\n  Operational Runway: %s"
 
-				msg := fmt.Sprintf(liquidationMsgFormat, clusterInfo.ClusterID, onChainBalanceStr, clusterInfo.LiquidationBlock, calcRunway(clusterInfo.LiquidationBlock, curBlock))
+				msg := fmt.Sprintf(liquidationMsgFormat, clusterInfo.ClusterID, onChainBalanceStr, clusterInfo.LiquidationBlock, formatRunaway(clusterInfo.LiquidationBlock, curBlock))
 				log.Infow("liquidationAlarm", "msg", msg)
 				err = alarm.Send(msg)
 				if err != nil {
@@ -239,9 +239,9 @@ func (d *AlarmDaemon) simulatedLiquidationAlarm() {
 				clusterInfo.UpcomingLiquidationBlock != clusterInfo.LiquidationBlock &&
 				curBlock+ac.ReportLiquidationThreshold >= clusterInfo.UpcomingLiquidationBlock {
 				onChainBalanceStr := store.CalcClusterOnChainBalance(curBlock, &clusterInfo)
-				liquidationMsgFormat := "MonitorSSV: Simulated Liquidation Warning!\n  Cluster: %s\n  Cluster Balance: %s ssv\n  Upcoming Liquidation Block: %d\n  Upcoming Operational Runway: %d days"
+				liquidationMsgFormat := "MonitorSSV: Simulated Liquidation Warning!\n  Cluster: %s\n  Cluster Balance: %s ssv\n  Forecasted Liquidation Block: %d\n  Forecasted Operational Runway: %s"
 
-				msg := fmt.Sprintf(liquidationMsgFormat, clusterInfo.ClusterID, onChainBalanceStr, clusterInfo.UpcomingLiquidationBlock, calcRunway(clusterInfo.UpcomingLiquidationBlock, curBlock))
+				msg := fmt.Sprintf(liquidationMsgFormat, clusterInfo.ClusterID, onChainBalanceStr, clusterInfo.UpcomingLiquidationBlock, formatRunaway(clusterInfo.UpcomingLiquidationBlock, curBlock))
 				log.Infow("simulatedLiquidationAlarm", "msg", msg)
 				err = alarm.Send(msg)
 				if err != nil {
@@ -349,8 +349,8 @@ func (d *AlarmDaemon) weeklyReport() {
 			log.Infow("weeklyReport: clusterInfo", "cluster", clusterInfo.ClusterID, "LiquidationBlock", clusterInfo.LiquidationBlock)
 
 			onChainBalanceStr := store.CalcClusterOnChainBalance(curBlock, &clusterInfo)
-			weeklyReportMsgFormat := "MonitorSSV: Weekly Report!\n  Cluster: %s\n  Validator Count: %d\n  Cluster Balance: %s ssv\n  Liquidation Block: %d\n  Operational Runway: %d days"
-			msg := fmt.Sprintf(weeklyReportMsgFormat, clusterInfo.ClusterID, clusterInfo.ValidatorCount, onChainBalanceStr, clusterInfo.LiquidationBlock, calcRunway(clusterInfo.LiquidationBlock, curBlock))
+			weeklyReportMsgFormat := "MonitorSSV: Weekly Report!\n  Cluster: %s\n  Validator Count: %d\n  Cluster Balance: %s ssv\n  Liquidation Block: %d\n  Operational Runway: %s"
+			msg := fmt.Sprintf(weeklyReportMsgFormat, clusterInfo.ClusterID, clusterInfo.ValidatorCount, onChainBalanceStr, clusterInfo.LiquidationBlock, formatRunaway(clusterInfo.LiquidationBlock, curBlock))
 			log.Infow("weeklyReport", "msg", msg)
 			err = alarm.Send(msg)
 			if err != nil {
@@ -449,8 +449,8 @@ func (d *AlarmDaemon) operatorFeeChangeAlarm(operatorFeeChange OperatorFeeChange
 			}
 
 			onChainBalanceStr := store.CalcClusterOnChainBalance(curBlock, clusterInfo)
-			weeklyReportMsgFormat := "MonitorSSV: OperatorFee Change Notice!\n  Operator ID: %d\n  Operator Fee: %s\n  Cluster: %s\n  Validator Count: %d\n  Cluster Balance: %s ssv\n  Liquidation Block: %d\n  Operational Runway: %d days"
-			msg := fmt.Sprintf(weeklyReportMsgFormat, operatorFeeChange.OperatorId, operatorFee, clusterInfo.ClusterID, clusterInfo.ValidatorCount, onChainBalanceStr, clusterInfo.LiquidationBlock, calcRunway(clusterInfo.LiquidationBlock, curBlock))
+			weeklyReportMsgFormat := "MonitorSSV: OperatorFee Change Notice!\n  Operator ID: %d\n  Operator Fee: %s\n  Cluster: %s\n  Validator Count: %d\n  Cluster Balance: %s ssv\n  Liquidation Block: %d\n  Operational Runway: %s"
+			msg := fmt.Sprintf(weeklyReportMsgFormat, operatorFeeChange.OperatorId, operatorFee, clusterInfo.ClusterID, clusterInfo.ValidatorCount, onChainBalanceStr, clusterInfo.LiquidationBlock, formatRunaway(clusterInfo.LiquidationBlock, curBlock))
 			log.Infow("operatorFeeChangeAlarm", "msg", msg)
 			err = alarm.Send(msg)
 			if err != nil {
@@ -503,8 +503,8 @@ func (d *AlarmDaemon) networkFeeChangeAlarm(networkFeeChange NetworkFeeChangeNot
 			}
 
 			onChainBalanceStr := store.CalcClusterOnChainBalance(curBlock, &clusterInfo)
-			weeklyReportMsgFormat := "MonitorSSV: NetworkFee Change Notice!\n  Old Network Fee: %s\n  New Network Fee: %s\n  Cluster: %s\n  Validator Count: %d\n  Cluster Balance: %s ssv\n  Liquidation Block: %d\n  Operational Runway: %d days"
-			msg := fmt.Sprintf(weeklyReportMsgFormat, oldNetworkFee, newNetworkFee, clusterInfo.ClusterID, clusterInfo.ValidatorCount, onChainBalanceStr, clusterInfo.LiquidationBlock, calcRunway(clusterInfo.LiquidationBlock, curBlock))
+			weeklyReportMsgFormat := "MonitorSSV: NetworkFee Change Notice!\n  Old Network Fee: %s\n  New Network Fee: %s\n  Cluster: %s\n  Validator Count: %d\n  Cluster Balance: %s ssv\n  Liquidation Block: %d\n  Operational Runway: %s"
+			msg := fmt.Sprintf(weeklyReportMsgFormat, oldNetworkFee, newNetworkFee, clusterInfo.ClusterID, clusterInfo.ValidatorCount, onChainBalanceStr, clusterInfo.LiquidationBlock, formatRunaway(clusterInfo.LiquidationBlock, curBlock))
 			log.Infow("networkFeeChangeAlarm", "msg", msg)
 			err = alarm.Send(msg)
 			if err != nil {
@@ -748,4 +748,20 @@ func calcRunway(liquidationBlock, curBlock uint64) uint64 {
 		runway = (liquidationBlock - curBlock) / 7200
 	}
 	return runway
+}
+
+func formatRunaway(liquidationBlock, curBlock uint64) string {
+	blocks := uint64(0)
+	if liquidationBlock > curBlock {
+		blocks = liquidationBlock - curBlock
+	}
+
+	if blocks == 0 {
+		return "liquidatable"
+	}
+
+	days := blocks / 7200
+	hours := (blocks - days*7200) * 12 / 3600
+
+	return fmt.Sprintf("%dd %dh", days, hours)
 }

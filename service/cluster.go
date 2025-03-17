@@ -202,8 +202,6 @@ func (ms *MonitorSSV) Get30DaySimulatedLiquidationRankingClusters(c *gin.Context
 		upcomingOperationalRunaway := uint64(0)
 		if clusterInfo.UpcomingLiquidationBlock != 0 && clusterInfo.Active && clusterInfo.UpcomingLiquidationBlock > curBlock {
 			upcomingOperationalRunaway = clusterInfo.UpcomingLiquidationBlock - curBlock
-		} else {
-			upcomingOperationalRunaway = operationalRunaway
 		}
 
 		clusterDetail.UpcomingOperationalRunaway = upcomingOperationalRunaway

@@ -121,6 +121,9 @@ const LiquidationRanking = ({ isDarkMode, network }) => {
     const formatRunaway = (blocks) => {
         const days = Math.floor(blocks / 7200);
         const hours = Math.floor((blocks - days * 7200) * 12 / 3600);
+        if (days === 0 && hours === 0) {
+            return 'liquidatable';
+        }
         return `${days}d ${hours}h`;
     };
 
@@ -143,13 +146,13 @@ const LiquidationRanking = ({ isDarkMode, network }) => {
                                 onClick={() => setActiveTab('current')}
                                 className={`flex-1 px-5 py-3 rounded-lg transition-all duration-200
                                     ${activeTab === 'current'
-                                    ? isDarkMode
-                                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                                        : 'bg-blue-500 text-white shadow-lg shadow-blue-500/20'
-                                    : isDarkMode
-                                        ? 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                                        : 'bg-white text-gray-600 hover:bg-gray-50'
-                                }`}
+                                        ? isDarkMode
+                                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                                            : 'bg-blue-500 text-white shadow-lg shadow-blue-500/20'
+                                        : isDarkMode
+                                            ? 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                                            : 'bg-white text-gray-600 hover:bg-gray-50'
+                                    }`}
                             >
                                 <div className="flex items-center gap-8">
                                     <div className="flex-shrink-0">
@@ -167,17 +170,17 @@ const LiquidationRanking = ({ isDarkMode, network }) => {
                                 disabled={isSimulatedDisabled}
                                 className={`flex-1 px-5 py-3 rounded-lg transition-all duration-200
                                     ${isSimulatedDisabled
-                                    ? isDarkMode
-                                        ? 'bg-gray-700 cursor-not-allowed opacity-60'
-                                        : 'bg-gray-100 cursor-not-allowed opacity-60'
-                                    : activeTab === 'simulated'
                                         ? isDarkMode
-                                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-                                            : 'bg-blue-500 text-white shadow-lg shadow-blue-500/20'
-                                        : isDarkMode
-                                            ? 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                                            : 'bg-white text-gray-600 hover:bg-gray-50'
-                                }`}
+                                            ? 'bg-gray-700 cursor-not-allowed opacity-60'
+                                            : 'bg-gray-100 cursor-not-allowed opacity-60'
+                                        : activeTab === 'simulated'
+                                            ? isDarkMode
+                                                ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                                                : 'bg-blue-500 text-white shadow-lg shadow-blue-500/20'
+                                            : isDarkMode
+                                                ? 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                                                : 'bg-white text-gray-600 hover:bg-gray-50'
+                                    }`}
                             >
                                 <div className="flex items-center gap-8">
                                     <div className="flex-shrink-0">
@@ -188,11 +191,11 @@ const LiquidationRanking = ({ isDarkMode, network }) => {
                                         : activeTab === 'simulated'
                                             ? 'text-blue-100'
                                             : 'text-gray-500'
-                                    }`}>
+                                        }`}>
                                         <span className="text-sm whitespace-nowrap">
                                             {isSimulatedDisabled
                                                 ? 'No network fee changes to simulate'
-                                                : `Preview of upcoming network fee: ${networkFees.upcoming} ssv`
+                                                : `Preview of forecasted network fee: ${networkFees.upcoming} ssv`
                                             }
                                         </span>
                                     </div>
@@ -240,61 +243,61 @@ const LiquidationRanking = ({ isDarkMode, network }) => {
                 <div className={`overflow-x-auto rounded-lg shadow ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
                     <table className="w-full">
                         <thead>
-                        <tr className={isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}>
-                            <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Rank</th>
-                            <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Cluster ID</th>
-                            <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Validators</th>
-                            <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Runway</th>
-                        </tr>
+                            <tr className={isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}>
+                                <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Rank</th>
+                                <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Cluster ID</th>
+                                <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Validators</th>
+                                <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Operational Runway</th>
+                            </tr>
                         </thead>
                         <tbody>
-                        {currentData.map((cluster, index) => (
-                            <React.Fragment key={cluster.id}>
-                                <tr
-                                    className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150 cursor-pointer`}
-                                    onClick={() => toggleRowExpansion(cluster.id)}
-                                >
-                                    <td className="p-3">{(currentPage - 1) * itemsPerPage + index + 1}</td>
-                                    <td className="p-3">
-                                        <Link
-                                            to={`/cluster/${cluster.id}`}
-                                            className={`hover:underline ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'
-                                            }`}
-                                        >
-                                            {truncateAddress(cluster.id)}
-                                        </Link>
-                                    </td>
-                                    <td className="p-3">{cluster.validatorCount}</td>
-                                    <td className="p-3">
+                            {currentData.map((cluster, index) => (
+                                <React.Fragment key={cluster.id}>
+                                    <tr
+                                        className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150 cursor-pointer`}
+                                        onClick={() => toggleRowExpansion(cluster.id)}
+                                    >
+                                        <td className="p-3">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                                        <td className="p-3">
+                                            <Link
+                                                to={`/cluster/${cluster.id}`}
+                                                className={`hover:underline ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'
+                                                    }`}
+                                            >
+                                                {truncateAddress(cluster.id)}
+                                            </Link>
+                                        </td>
+                                        <td className="p-3">{cluster.validatorCount}</td>
+                                        <td className="p-3">
                                             <span className="px-2 py-1 rounded-full bg-red-500 text-white text-sm">
-                                                {formatRunaway(cluster.operationalRunaway)}
+                                                {formatRunaway(activeTab === 'current' ? cluster.operationalRunaway : cluster.upcomingOperationalRunaway)}
                                             </span>
-                                    </td>
-                                </tr>
-                                {expandedRow === cluster.id && (
-                                    <tr className={`border-b ${isDarkMode ? 'border-gray-700 bg-gray-750' : 'border-gray-200 bg-gray-50'}`}>
-                                        <td colSpan="4" className="p-4">
-                                            <div className="text-sm flex flex-wrap items-center gap-x-6 gap-y-2">
-                                                <span><strong>Owner:</strong> {cluster.owner}</span>
-                                                <span><strong>On Chain Balance:</strong> {cluster.onChainBalance} ssv</span>
-                                                <span><strong>Burn Fee:</strong> {activeTab === 'current' ? cluster.burnFee : cluster.upcomingBurnFee} ssv</span>
-                                                <div className="w-full">
-                                                    <strong>Operators:</strong>{' '}
-                                                    {cluster.operators.map((op) => (
-                                                        <OperatorDisplay
-                                                            key={op.id}
-                                                            name={op.name}
-                                                            id={op.id}
-                                                            network={network}
-                                                        />
-                                                    ))}
-                                                </div>
-                                            </div>
                                         </td>
                                     </tr>
-                                )}
-                            </React.Fragment>
-                        ))}
+                                    {expandedRow === cluster.id && (
+                                        <tr className={`border-b ${isDarkMode ? 'border-gray-700 bg-gray-750' : 'border-gray-200 bg-gray-50'}`}>
+                                            <td colSpan="4" className="p-4">
+                                                <div className="text-sm flex flex-wrap items-center gap-x-6 gap-y-2">
+                                                    <span><strong>Owner:</strong> {cluster.owner}</span>
+                                                    <span><strong>On Chain Balance:</strong> {cluster.onChainBalance} ssv</span>
+                                                    <span><strong>Cluster Burn Fee:</strong> {activeTab === 'current' ? (cluster.burnFee * cluster.validatorCount).toFixed(2) : (cluster.upcomingBurnFee * cluster.validatorCount).toFixed(2)} ssv/year</span>
+                                                    <div className="w-full">
+                                                        <strong>Operators:</strong>{' '}
+                                                        {cluster.operators.map((op) => (
+                                                            <OperatorDisplay
+                                                                key={op.id}
+                                                                name={op.name}
+                                                                id={op.id}
+                                                                network={network}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )}
+                                </React.Fragment>
+                            ))}
                         </tbody>
                     </table>
                 </div>
@@ -350,7 +353,7 @@ const LiquidationRanking = ({ isDarkMode, network }) => {
                         className={`px-3 py-1 rounded ${isDarkMode
                             ? 'bg-gray-800 text-white hover:bg-gray-700'
                             : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                        } ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            } ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         &lt;&lt;
                     </button>
@@ -360,7 +363,7 @@ const LiquidationRanking = ({ isDarkMode, network }) => {
                         className={`px-3 py-1 rounded ${isDarkMode
                             ? 'bg-gray-800 text-white hover:bg-gray-700'
                             : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                        } ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            } ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         &lt;
                     </button>
@@ -373,7 +376,7 @@ const LiquidationRanking = ({ isDarkMode, network }) => {
                         className={`px-3 py-1 rounded ${isDarkMode
                             ? 'bg-gray-800 text-white hover:bg-gray-700'
                             : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                        } ${currentPage === totalPages[activeTab] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            } ${currentPage === totalPages[activeTab] ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         &gt;
                     </button>
@@ -383,7 +386,7 @@ const LiquidationRanking = ({ isDarkMode, network }) => {
                         className={`px-3 py-1 rounded ${isDarkMode
                             ? 'bg-gray-800 text-white hover:bg-gray-700'
                             : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                        } ${currentPage === totalPages[activeTab] ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            } ${currentPage === totalPages[activeTab] ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         &gt;&gt;
                     </button>

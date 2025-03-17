@@ -110,84 +110,84 @@ const Operators = ({ isDarkMode }) => {
             <div className={`overflow-x-auto rounded-lg shadow ${isDarkMode ? 'bg-gray-800' : 'bg-white'}`}>
                 <table className="w-full">
                     <thead>
-                    <tr className={isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}>
-                        <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Name</th>
-                        <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Owner</th>
-                        <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Validators</th>
-                    </tr>
+                        <tr className={isDarkMode ? 'bg-gray-700' : 'bg-gray-200'}>
+                            <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Name</th>
+                            <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Owner</th>
+                            <th className={`p-3 text-left font-semibold ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>Validators</th>
+                        </tr>
                     </thead>
                     <tbody>
-                    {operators.map((operator) => (
-                        <React.Fragment key={operator.id}>
-                            <tr
-                                className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150 cursor-pointer`}
-                                onClick={() => toggleRowExpansion(operator.id)}
-                            >
-                                <td className="p-3 flex items-center">
-                                    <span className="mr-2">{operator.name}</span>
-                                    {operator.removed ? (
-                                        <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-red-500 text-white">removed</span>
-                                    ) : (
-                                        !operator.privacy ? (
-                                            <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-green-500 text-white">public</span>
+                        {operators.map((operator) => (
+                            <React.Fragment key={operator.id}>
+                                <tr
+                                    className={`border-b ${isDarkMode ? 'border-gray-700' : 'border-gray-200'} hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150 cursor-pointer`}
+                                    onClick={() => toggleRowExpansion(operator.id)}
+                                >
+                                    <td className="p-3 flex items-center">
+                                        <span className="mr-2">{operator.name}</span>
+                                        {operator.removed ? (
+                                            <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-red-500 text-white">removed</span>
                                         ) : (
-                                            <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-blue-500 text-white">private</span>
-                                        )
-                                    )}
-                                </td>
-                                <td className="p-3">
-                                    <Link
-                                        to={`/account/${operator.owner}`}
-                                        className={`hover:underline ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}
-                                        onClick={(e) => e.stopPropagation()}
-                                    >
-                                        {truncateAddress(operator.owner)}
-                                    </Link>
-                                </td>
-                                <td className={`p-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}>{operator.validators}</td>
-                            </tr>
-                            {expandedRow === operator.id && (
-                                <tr className={`border-b ${isDarkMode ? 'border-gray-700 bg-gray-750' : 'border-gray-200 bg-gray-50'}`}>
-                                    <td colSpan="4" className="p-4">
-                                        <div className="text-sm flex flex-wrap items-center gap-x-6 gap-y-2">
-                                            <span><strong>Operator ID:</strong> {operator.id}</span>
-                                            <span><strong>Operator Fee:</strong> {operator.operatorFee} ssv</span>
-                                            <span><strong>Operator Earnings:</strong> {operator.operatorEarnings} ssv</span>
-                                            {operator.pendingOperatorFee !== "0" && operator.beginUpdateTime !== 0 && (
-                                                <>
+                                            !operator.privacy ? (
+                                                <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-green-500 text-white">public</span>
+                                            ) : (
+                                                <span className="px-1.5 py-0.5 text-xs font-medium rounded-full bg-blue-500 text-white">private</span>
+                                            )
+                                        )}
+                                    </td>
+                                    <td className="p-3">
+                                        <Link
+                                            to={`/account/${operator.owner}`}
+                                            className={`hover:underline ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            {truncateAddress(operator.owner)}
+                                        </Link>
+                                    </td>
+                                    <td className={`p-3 ${isDarkMode ? 'text-gray-300' : 'text-gray-800'}`}>{operator.validators}</td>
+                                </tr>
+                                {expandedRow === operator.id && (
+                                    <tr className={`border-b ${isDarkMode ? 'border-gray-700 bg-gray-750' : 'border-gray-200 bg-gray-50'}`}>
+                                        <td colSpan="4" className="p-4">
+                                            <div className="text-sm flex flex-wrap items-center gap-x-6 gap-y-2">
+                                                <span><strong>Operator ID:</strong> {operator.id}</span>
+                                                <span><strong>Operator Fee:</strong> {operator.operatorFee} ssv</span>
+                                                <span><strong>Operator Earnings:</strong> {operator.operatorEarnings} ssv</span>
+                                                {operator.pendingOperatorFee !== "0" && operator.beginUpdateTime !== 0 && (
+                                                    <>
                                                         <span className="text-yellow-500">
-                                                            <strong>Upcoming Fee:</strong>{' '}
+                                                            <strong>Declared Fee:</strong>{' '}
                                                             <span>{operator.pendingOperatorFee} ssv</span>
                                                         </span>
-                                                    <span className="text-yellow-500">
+                                                        <span className="text-yellow-500">
                                                             <strong>Effective In:</strong>{' '}
-                                                        <span>
+                                                            <span>
                                                                 {formatTimeRemaining(operator.beginUpdateTime)}
                                                             </span>
                                                         </span>
-                                                </>
-                                            )}
-                                            <div className="w-full">
-                                                <strong>Whitelisted Addresses:</strong>{' '}
-                                                {operator.whitelistedAddress.map((address, index) => (
-                                                    <React.Fragment key={address}>
-                                                        <Link
-                                                            to={`/account/${address}`}
-                                                            className={`hover:underline ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}
-                                                            onClick={(e) => e.stopPropagation()}
-                                                        >
-                                                            {truncateAddress(address)}
-                                                        </Link>
-                                                        {index < operator.whitelistedAddress.length - 1 ? ', ' : ''}
-                                                    </React.Fragment>
-                                                ))}
+                                                    </>
+                                                )}
+                                                <div className="w-full">
+                                                    <strong>Whitelisted Addresses:</strong>{' '}
+                                                    {operator.whitelistedAddress.map((address, index) => (
+                                                        <React.Fragment key={address}>
+                                                            <Link
+                                                                to={`/account/${address}`}
+                                                                className={`hover:underline ${isDarkMode ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-800'}`}
+                                                                onClick={(e) => e.stopPropagation()}
+                                                            >
+                                                                {truncateAddress(address)}
+                                                            </Link>
+                                                            {index < operator.whitelistedAddress.length - 1 ? ', ' : ''}
+                                                        </React.Fragment>
+                                                    ))}
+                                                </div>
                                             </div>
-                                        </div>
-                                    </td>
-                                </tr>
-                            )}
-                        </React.Fragment>
-                    ))}
+                                        </td>
+                                    </tr>
+                                )}
+                            </React.Fragment>
+                        ))}
                     </tbody>
                 </table>
             </div>
@@ -215,7 +215,7 @@ const Operators = ({ isDarkMode }) => {
                         className={`px-3 py-1 rounded ${isDarkMode
                             ? 'bg-gray-800 text-white hover:bg-gray-700'
                             : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                        } ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            } ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         &lt;&lt;
                     </button>
@@ -225,12 +225,12 @@ const Operators = ({ isDarkMode }) => {
                         className={`px-3 py-1 rounded ${isDarkMode
                             ? 'bg-gray-800 text-white hover:bg-gray-700'
                             : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                        } ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            } ${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         &lt;
                     </button>
                     <span className={`px-3 py-1 rounded ${isDarkMode ? 'bg-blue-500 text-white' : 'bg-blue-100 text-blue-800'
-                    }`}>
+                        }`}>
                         {currentPage} / {totalPages}
                     </span>
                     <button
@@ -239,7 +239,7 @@ const Operators = ({ isDarkMode }) => {
                         className={`px-3 py-1 rounded ${isDarkMode
                             ? 'bg-gray-800 text-white hover:bg-gray-700'
                             : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                        } ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            } ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         &gt;
                     </button>
@@ -249,7 +249,7 @@ const Operators = ({ isDarkMode }) => {
                         className={`px-3 py-1 rounded ${isDarkMode
                             ? 'bg-gray-800 text-white hover:bg-gray-700'
                             : 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                        } ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            } ${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                         &gt;&gt;
                     </button>
